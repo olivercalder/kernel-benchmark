@@ -3,6 +3,7 @@
 # flex and bison must be installed
 which flex > /dev/null || { echo "ERROR: please install flex"; exit 1; }
 which bison > /dev/null || { echo "ERROR: please install bison"; exit 1; }
+which qemu-system-x86_64 > /dev/null || { echo "ERROR: please install qemu-system"; exit 1; }
 
 # If the linux directory does not yet exist, clone it
 if [ ! -d linux ] && [[ $(basename $(pwd)) != "linux" ]]; then
