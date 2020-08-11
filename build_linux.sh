@@ -3,6 +3,7 @@
 # flex and bison must be installed
 which flex > /dev/null || { echo "ERROR: please install flex"; exit 1; }
 which bison > /dev/null || { echo "ERROR: please install bison"; exit 1; }
+which debootstrap > /dev/null || { echo "ERROR: please install debootstrap"; exit 1; }
 which qemu-system-x86_64 > /dev/null || { echo "ERROR: please install qemu-system"; exit 1; }
 
 # If the linux directory does not yet exist, clone it
@@ -19,7 +20,8 @@ fi
 make clean
 make x86_64_defconfig   # make generic config file
 make kvm_guest.config   # modify config file for kvm
-time make -j $(grep -c "processor" /proc/cpuinfo)   # compile the kernel using all CPU threads (with timing, for fun)
+time make -j $(grep -c "processor" /proc/cpuinfo) || { echo "ERROR: please install libelf-dev and libssl-dev"; exit 1; }
+# compile the kernel using all CPU threads (with timing, for fun), and if compilation fails, warn about libelf and libssl
 
 cd ..
 
@@ -27,7 +29,15 @@ IMG=qemu-image.img
 DIR=mount-dir
 
 if [ -f $IMG ]; then
-    rm $IMG
+    echo "WARNING: $IMG already exists. Overwrite it? [N/y]"
+    read RESP
+    if [[ "$RESP" == "y" ]]; then
+        rm $IMG
+    else
+        echo "$IMG unchanged."
+        cd $CWD
+        exit 0
+    fi
 fi
 
 qemu-img create $IMG 1g     # create a qemu disk image
