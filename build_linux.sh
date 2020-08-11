@@ -6,7 +6,7 @@ which bison > /dev/null || { echo "ERROR: please install bison"; exit 1; }
 
 # If the linux directory does not yet exist, clone it
 if [ ! -d linux ] && [[ $(basename $(pwd)) != "linux" ]]; then
-    git clone -b v5.8 --depth=1 git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+    git clone -b v5.8 --depth=1 https://github.com/torvalds/linux.git
 fi
 
 CWD=$(pwd)

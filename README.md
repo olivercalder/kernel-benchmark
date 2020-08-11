@@ -11,7 +11,7 @@ The Rust kernel is based upon the excellent blog by Philipp Oppermann, which can
 
 ## Linux kernel
 
-The Linux kernel is pulled from the 5.8 release [here](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git), and built using `debootstrap` to Debian 10, roughly based on the instructions [here](https://www.collabora.com/news-and-blog/blog/2017/01/16/setting-up-qemu-kvm-for-kernel-development/). Any files in the disk image must be modified in the chroot environment prior to booting. _NOTE: it may be necessary to install `libelf-dev` and `libssl-dev` before the Linux kernel can be compiled._
+The Linux kernel is pulled from the 5.8 release [here](https://github.com/torvalds/linux), and built using `debootstrap` to Debian 10, roughly based on the instructions [here](https://www.collabora.com/news-and-blog/blog/2017/01/16/setting-up-qemu-kvm-for-kernel-development/). Any files in the disk image must be modified in the chroot environment prior to booting. _NOTE: it may be necessary to install `libelf-dev` and `libssl-dev` before the Linux kernel can be compiled._
 
 - To download and build the Linux kernel and accompanying disk image, execute `build_linux.sh`
 - To modify files on the disk image, execute `edit_img.sh`
