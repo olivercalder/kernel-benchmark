@@ -3,7 +3,6 @@
 # flex and bison must be installed
 which flex > /dev/null || { echo "ERROR: please install flex"; exit 1; }
 which bison > /dev/null || { echo "ERROR: please install bison"; exit 1; }
-which debootstrap > /dev/null || { echo "ERROR: please install debootstrap"; exit 1; }
 which qemu-system-x86_64 > /dev/null || { echo "ERROR: please install qemu-system"; exit 1; }
 
 # If the linux directory does not yet exist, clone it
@@ -25,28 +24,10 @@ time make -j $(grep -c "processor" /proc/cpuinfo) || { echo "ERROR: please insta
 
 cd ..
 
-IMG=qemu-image.img
-DIR=mount-dir
-
-if [ -f $IMG ]; then
-    echo "WARNING: $IMG already exists. Overwrite it? [N/y]"
-    read RESP
-    if [[ "$RESP" == "y" ]]; then
-        rm $IMG
-    else
-        echo "$IMG unchanged."
-        cd $CWD
-        exit 0
-    fi
+echo "Create new Debian disk image for qemu? [N/y] "
+read RESP
+if [[ "$RESP" == "y" ]]; then
+    bash create_image.sh
 fi
-
-qemu-img create $IMG 1g     # create a qemu disk image
-mkfs.ext2 $IMG      # ext2 is simple and fast, not journaled
-mkdir -p $DIR
-sudo mount -o loop $IMG $DIR    # uses a loop device to map the disk image to the directory
-sudo debootstrap --arch amd64 buster $DIR   # install a minimal Debian Buster system
-sudo chroot $DIR passwd -d root     # remove root password
-sudo umount $DIR
-rmdir $DIR
 
 cd $CWD

@@ -8,8 +8,6 @@ if [ -n "$1" ]; then
     IMG=$1
 fi
 
-exit 0
-
 DIR=mount-point.dir
 mkdir -p $DIR
 sudo mount -o loop $IMG $DIR    # uses a loop device to map the disk image to the directory
