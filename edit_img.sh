@@ -2,11 +2,7 @@
 
 # Based on the instructions from https://www.collabora.com/news-and-blog/blog/2017/01/16/setting-up-qemu-kvm-for-kernel-development/
 
-IMG=qemu-image.img
-
-if [ -n "$1" ]; then
-    IMG=$1
-fi
+[ -n "$1" ] && IMG=$1 || IMG=qemu_image.img
 
 DIR=mount-point.dir
 mkdir -p $DIR
