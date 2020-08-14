@@ -42,7 +42,8 @@ if [ -n "$IS_SCRIPT" ] || [ -n "$SHUTDOWN" ]; then
     echo "echo shutdown now" >> "$NEWPROFILE"    # so that "shutdown now" appears in the output pipe
     echo "shutdown now" >> "$NEWPROFILE"         # actually shutdown
     sudo mv "$NEWPROFILE" "$PROFILE"
-    [ -n "$IS_SCRIPT" ] || sudo chroot $DIR     # if there were not any scripts but -s flag was passed, chroot
+else
+    sudo chroot $DIR
 fi
 sudo umount $DIR
 rmdir $DIR
