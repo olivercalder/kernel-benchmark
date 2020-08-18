@@ -4,9 +4,10 @@ usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
 
 OPTIONS:
     -h                      display help
+    -b <resultfilename>     benchmark mode: write timestamp ID to the given file once qemu exits
     -d                      debug mode: preserve stderr and qemu display
     -k                      --enable-kvm in qemu
-    -l                      long lived -- don't shutdown
+    -l                      long lived: don't add shutdown command to the image's .profile automatically
     -n                      do not modify or copy the disk image
                             - saves a lot of startup time if there is a free preconfigured image
                             - however, ignores any scripts which are passed in as arguments
@@ -14,8 +15,10 @@ OPTIONS:
                             - image is copied by default, but this copies the image without modification
     -i <imagefile.img>      use specified qemu disk image
     -o <outfilename>        write output of all scripts to the given file
+    -p <outdir>             write output file(s) in the given directory
 " 1>&2; exit 1; }
 
+BENCHFILE=
 PIPEERR="/dev/null"        # leading space is necessary due to option for 2>"&1"
 NODISP="-display none"
 IMGTEMP="qemu_image.img"    # qemu image template
@@ -23,12 +26,16 @@ SHUTDOWN="-s"
 NOMOD=
 COPY=
 OUTFILE=
+OUTDIR=
 USEKVM=
 
-while getopts ":hdklnci:o:" OPT; do
+while getopts ":hdklncb:i:o:p:" OPT; do
     case "$OPT" in
         h)
             usage
+            ;;
+        b)
+            BENCHFILE="$OPTARG"
             ;;
         d)
             PIPEERR="/dev/stdout"
@@ -52,6 +59,9 @@ while getopts ":hdklnci:o:" OPT; do
         o)
             OUTFILE="$OPTARG"
             ;;
+        p)
+            OUTDIR="$OPTARG"
+            ;;
         *)
             usage
             ;;
@@ -59,6 +69,8 @@ while getopts ":hdklnci:o:" OPT; do
 done
 
 shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
+
+[ -f "linux/arch/x86_64/boot/bzImage" ] || { echo "ERROR: linux kernel not found at linux/arch/x86_64/boot/bzImage"; exit 1; }
 
 [ -f $IMGTEMP ] || { echo "ERROR: qemu disk image does not exist: $IMGTEMP"; exit 1; }
 
@@ -81,6 +93,9 @@ fi
 NAME="qemu-linux$USEKVM-$TS"
 
 [ -n "$OUTFILE" ] || OUTFILE="$NAME.output"
+[ -n "$OUTDIR" ] || OUTDIR="."
+mkdir -p "$OUTDIR"
+OUTFILE="$OUTDIR/$OUTFILE"
 
 NAMEDPIPE="/tmp/$NAME"
 
@@ -133,7 +148,7 @@ write_until() {
 ##### BEGIN RUNNING QEMU IN THE BACKGROUND #####
 
 
-echo "$(date +%s%N) QEMU initiated" >> $OUTFILE && qemu-system-x86_64 \
+echo "$(date +%s%N) QEMU initiated" >> "$OUTFILE" && qemu-system-x86_64 \
     -kernel linux/arch/x86_64/boot/bzImage \
     -hda $IMG \
     -append "root=/dev/sda console=ttyS0" \
@@ -143,8 +158,8 @@ echo "$(date +%s%N) QEMU initiated" >> $OUTFILE && qemu-system-x86_64 \
     -serial pipe:$NAMEDPIPE \
     $NODISP \
     2> $PIPEERR \
-    && echo "$(date +%s%N) QEMU exited successfully" >> $OUTFILE \
-    || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> $OUTFILE ; } \
+    && { echo "$(date +%s%N) QEMU exited successfully" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; } \
+    || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; } \
     &
 # write timestamp and start qemu with the named pipe for I/O, and background it,
 # since we need to begin watching its output; when it exits, write the timestamp
