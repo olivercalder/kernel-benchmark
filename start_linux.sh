@@ -5,14 +5,12 @@ usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
 OPTIONS:
     -h                      display help
     -b <resultfilename>     benchmark mode: write timestamp ID to the given file once qemu exits
-    -d                      debug mode: preserve stderr and qemu display
+    -d                      debug mode: preserve stderr and qemu display, do not pipe serial output
     -k                      --enable-kvm in qemu
     -l                      long lived: don't add shutdown command to the image's .profile automatically
     -n                      do not modify or copy the disk image
                             - saves a lot of startup time if there is a free preconfigured image
                             - however, ignores any scripts which are passed in as arguments
-    -c                      copy (but do not modify) the disk image
-                            - image is copied by default, but this copies the image without modification
     -i <imagefile.img>      use specified qemu disk image
     -o <outfilename>        write output of all scripts to the given file
     -p <outdir>             write output file(s) in the given directory
@@ -21,15 +19,15 @@ OPTIONS:
 BENCHFILE=
 PIPEERR="/dev/null"        # leading space is necessary due to option for 2>"&1"
 NODISP="-display none"
+NOPIPE=
 IMGTEMP="qemu_image.img"    # qemu image template
 SHUTDOWN="-s"
 NOMOD=
-COPY=
 OUTFILE=
 OUTDIR=
 USEKVM=
 
-while getopts ":hdklncb:i:o:p:" OPT; do
+while getopts ":hdklnb:i:o:p:" OPT; do
     case "$OPT" in
         h)
             usage
@@ -40,6 +38,7 @@ while getopts ":hdklncb:i:o:p:" OPT; do
         d)
             PIPEERR="/dev/stdout"
             NODISP=
+            NOPIPE="1"
             ;;
         k)
             USEKVM="--enable-kvm"
@@ -49,9 +48,6 @@ while getopts ":hdklncb:i:o:p:" OPT; do
             ;;
         n)
             NOMOD="1"
-            ;;
-        c)
-            COPY="1"
             ;;
         i)
             IMGTEMP="$OPTARG"
@@ -81,25 +77,27 @@ done
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
 
 IMG="/tmp/$IMGTEMP-$TS.img"
-if [ -n "$COPY" ]; then             # -c flag is present, so use an unmodified copy (-n doesn't matter)
-    cp "$IMGTEMP" "$IMG"            # copy and use the image without modification
-elif [ -n "$NOMOD" ]; then          # -n flag is present and -c is not
+if [ -n "$NOMOD" ]; then            # -n flag is present and -c is not
     IMG="$IMGTEMP"                  # directly use the given image
-else                                # -n and -c flags not present, so make a copy of the image, modify it, and use it
-    cp "$IMGTEMP" "$IMG"            # make a copy of the disk image so that each VM gets its own
+else                                # -n flag not present, so make a copy of the image, modify it, and use it
+    cp "$IMGTEMP" "$IMG"            # make a copy of the disk image so that the original is not modified
     bash edit_image.sh $SHUTDOWN "$IMG" "$@"    # copy all script files to the image and add them to .profile
 fi
 
 NAME="qemu-linux$USEKVM-$TS"
 
 [ -n "$OUTFILE" ] || OUTFILE="$NAME.output"
-[ -n "$OUTDIR" ] || OUTDIR="."
-mkdir -p "$OUTDIR"
+[ -n "$OUTDIR" ] && mkdir -p "$OUTDIR" || OUTDIR="."
 OUTFILE="$OUTDIR/$OUTFILE"
 
-NAMEDPIPE="/tmp/$NAME"
-
-mkfifo "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # create I/O pipes
+if [ -n "$NOPIPE" ]; then
+    NAMEDPIPE="/dev/null"
+    PIPE=
+else
+    NAMEDPIPE="/tmp/$NAME"
+    mkfifo "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # create I/O pipes
+    PIPE="-serial pipe:$NAMEDPIPE"
+fi
 
 
 ##### DEFINE FUNCTIONS FOR I/O #####
@@ -151,11 +149,12 @@ write_until() {
 echo "$(date +%s%N) QEMU initiated" >> "$OUTFILE" && qemu-system-x86_64 \
     -kernel linux/arch/x86_64/boot/bzImage \
     -hda $IMG \
+    -snapshot \
     -append "root=/dev/sda console=ttyS0" \
     -no-reboot \
     $USEKVM \
     -device isa-debug-exit \
-    -serial pipe:$NAMEDPIPE \
+    $PIPE \
     $NODISP \
     2> $PIPEERR \
     && { echo "$(date +%s%N) QEMU exited successfully" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; } \
@@ -168,10 +167,12 @@ echo "$(date +%s%N) QEMU initiated" >> "$OUTFILE" && qemu-system-x86_64 \
 ##### WAIT FOR AUTOMATIC LOGIN, THEN RECORD OUTPUT UNTIL SHUTDOWN OCCURS #####
 
 
-# This is the last line of the message printed after login
-wait_for "permitted by applicable law"
+if [ -z "$NOPIPE" ]; then
+    # This is the last line of the message printed after login
+    wait_for "permitted by applicable law"
 
-write_until "$OUTFILE" "shutdown now"
+    write_until "$OUTFILE" "shutdown now"
 
-rm "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # remove pipes
-[ -n "$NOMOD" ] && [ ! -n "$COPY" ] || rm "$IMG"  # remove image if it was copied from a template
+    rm "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # remove pipes
+    [ -n "$NOMOD" ] || rm "$IMG"  # remove image if it was copied from a template
+fi

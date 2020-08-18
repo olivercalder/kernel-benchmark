@@ -4,6 +4,7 @@ usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
 
 OPTIONS:
     -h                      display help
+    -d                      debug mode: preserve stderr and qemu display (pass -d to start_linux)
     -o <resultfilename>     write start and end timestamps to the given file once qemu exits
     -p <outputdir>          write individual qemu outputs to the given directory
     -k                      --enable-kvm in qemu
@@ -17,6 +18,7 @@ OPTIONS:
 " 1>&2; exit 1; }
 
 BENCHFILE=
+DEBUG=
 OUTDIR=
 USEKVM=
 IMGTEMP="qemu_image.img"
@@ -25,10 +27,13 @@ RATE="10"
 TESTTIME="60"
 WARMTIME="60"
 
-while getopts ":ho:p:ki:nr:t:w:" OPT; do
+while getopts ":hdo:p:ki:nr:t:w:" OPT; do
     case "$OPT" in
         h)
             usage
+            ;;
+        d)
+            DEBUG="-d"
             ;;
         o)
             BENCHFILE="$OPTARG"
@@ -75,9 +80,11 @@ TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique 
 [ -n "$BENCHFILE" ] || BENCHFILE="benchmark-$TS-results.txt"
 [ -n "$OUTDIR" ] || OUTDIR="benchmark-$TS-output"
 
-IMG="/tmp/$IMGTEMP-$TS.img"
-cp "$IMGTEMP" "$IMG"                # copy the template to /tmp and name it with a timestamp
-if [ -z "$NOMOD" ]; then            # -n flag is not present, so add scripts to the image
+if [ -n "$NOMOD" ]; then                # -n flag is present, so do not modify the disk image
+    IMG="$IMGTEMP"                      # thus, disregard any scripts passed as arguments
+else                                    # -n flag is not present, so copy the image template and add scripts
+    IMG="/tmp/$IMGTEMP-$TS.img"
+    cp "$IMGTEMP" "$IMG"                # copy the template to /tmp and name it with a timestamp
     bash edit_image.sh -s "$IMG" "$@"   # copy all script files to the image and add them to .profile
 fi
 
@@ -85,21 +92,13 @@ typeset -i i TOTAL
 TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$RATE*1.1))")
 echo "Warmup time: $WARMTIME"
 echo "Test time: $TESTTIME"
-echo "Image spawn interval: $RATE"
-echo "Total images created (total necessary * 1.1): $TOTAL"
-
-# prepare disk images so each vm gets its own image
-echo "Copying disk images..."
-for ((i=1;i<=TOTAL;i++)); do
-    printf "\r$i"
-    cp "$IMG" "$IMG.$i.img"
-done
-printf "\nDone.\n"
+echo "VM spawn interval: $RATE"
+echo "Total VMs to create (total necessary * 1.1): $TOTAL"
 
 start_vms() {
     for ((i=1;i<=TOTAL;i++)); do
-        bash start_linux.sh -b "$BENCHFILE" $USEKVM -n -i "$IMG.$i.img" -p "$OUTDIR" &
-        printf "\rspawned VM number $i"
+        bash start_linux.sh -b "$BENCHFILE" $DEBUG $USEKVM -n -i "$IMG" -p "$OUTDIR" &
+        printf "\rSpawned VM $i"
         sleep "$RATE"
     done
     printf "\n"
@@ -111,8 +110,9 @@ echo "BEGIN BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
 sleep "$TESTTIME"
 echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
 
-rm "$IMG"
+# Wait until all VMs exit
 for ((i=1;i<=TOTAL;i++)); do
-    while [ -n "$(ps -aux | grep "$IMG.$i.img" | grep -v "grep")" ]; do sleep 1; done    # wait until qemu exits, then remove disk image
-    rm "$IMG.$i.img"
+    while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_linux.sh" | grep "$BENCHFILE")" ]; do sleep 1; done
 done
+# If the VMs use a modified disk image, then remove disk image
+[ -n "$NOMOD" ] || rm "$IMG"
