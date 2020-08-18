@@ -26,7 +26,6 @@ done
 shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
 
-[ "$1" == "-s" ] && SIZE=
 [ -n "$1" ] && IMG=$1 || IMG=qemu_image.img
 TS=$(date +%s%N)
 DIR="/tmp/mount_dir-$TS"
