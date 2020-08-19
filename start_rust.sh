@@ -122,8 +122,8 @@ echo "$(date +%s%N) QEMU initiated" >> $OUTFILE && qemu-system-x86_64 \
     -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
     $PIPE \
     $NODISP \
-    && { echo "$(date +%s%N) QEMU exited successfully" >> $OUTFILE ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; } \
-    || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> $OUTFILE ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; } \
+    && { echo "$(date +%s%N) QEMU exited successfully" >> $OUTFILE ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" || true; } \
+    || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> $OUTFILE ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" || true; } \
     &
 
 # 0xf4 is used to communicate exit codes to qemu
