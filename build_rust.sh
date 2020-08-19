@@ -9,11 +9,11 @@ CWD=$(pwd)
 # If the rust-kernel directory does not yet exist, clone it, and set up the Rust compiler
 if [ ! -d rust-kernel ]; then
     git clone https://github.com/olivercalder/rust-kernel
-    cd rust-kernel/test_os
     rustup toolchain install nightly
+    cargo install bootimage
+    cd rust-kernel/test_os
     rustup component add rust-src
     rustup component add llvm-tools-preview
-    cargo install bootimage
     cd ../..
 fi
 
