@@ -5,7 +5,7 @@ usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
 OPTIONS:
     -h                      display help
     -b <resultfilename>     benchmark mode: write timestamp ID to the given file once qemu exits
-    -d                      debug mode: preserve stderr and qemu display, do not pipe serial output
+    -d                      debug mode: preserve qemu display, do not pipe serial output to console
     -k                      --enable-kvm in qemu
     -l                      long lived: don't add shutdown command to the image's .profile automatically
     -n                      do not modify or copy the disk image
@@ -17,7 +17,6 @@ OPTIONS:
 " 1>&2; exit 1; }
 
 BENCHFILE=
-PIPEERR="/dev/null"        # leading space is necessary due to option for 2>"&1"
 NODISP="-display none"
 NOPIPE=
 IMGTEMP="qemu_image.img"    # qemu image template
@@ -36,7 +35,6 @@ while getopts ":hdklnb:i:o:p:" OPT; do
             BENCHFILE="$OPTARG"
             ;;
         d)
-            PIPEERR="/dev/stdout"
             NODISP=
             NOPIPE="1"
             ;;
@@ -156,7 +154,6 @@ echo "$(date +%s%N) QEMU initiated" >> "$OUTFILE" && qemu-system-x86_64 \
     -device isa-debug-exit \
     $PIPE \
     $NODISP \
-    2> $PIPEERR \
     && { echo "$(date +%s%N) QEMU exited successfully" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" || true; } \
     || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" || true; } \
     &
