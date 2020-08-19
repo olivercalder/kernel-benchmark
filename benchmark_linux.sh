@@ -4,7 +4,7 @@ usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
 
 OPTIONS:
     -h                      display help
-    -d                      debug mode: preserve stderr and qemu display (pass -d to start_linux)
+    -d                      debug mode: preserve stderr and qemu display (pass -d to start_linux.sh)
     -o <resultfilename>     write start and end timestamps to the given file once qemu exits
     -p <outputdir>          write individual qemu outputs to the given directory
     -k                      --enable-kvm in qemu
