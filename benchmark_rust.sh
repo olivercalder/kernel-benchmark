@@ -7,7 +7,7 @@ OPTIONS:
     -d                      debug mode: preserve qemu display (pass -d to start_rust.sh)
     -i <path/to/binary>     boot from the given Rust kernel binary
                             (default is rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin)
-    -o <resultfilename>     write start and end timestamps to the given file once qemu exits
+    -o <resultfilename>     write timestamp IDs to the given file once qemu exits
     -p <outputdir>          write individual qemu outputs to the given directory
     -r <rate>               set the timestep between calls to spawn new VMs in seconds -- default 10
     -t <duration>           set the duration of the benchmark in seconds -- default 60
@@ -75,6 +75,7 @@ echo "Test time: $TESTTIME"
 echo "VM spawn interval: $RATE"
 echo "Total VMs to create (total necessary * 1.1): $TOTAL"
 
+SPAWNING="1"
 start_vms() {
     time for ((i=1;i<=TOTAL;i++)); do
         bash start_rust.sh -b "$BENCHFILE" $DEBUG -i "$BIN" -p "$OUTDIR" &
@@ -82,6 +83,7 @@ start_vms() {
         sleep "$RATE"
     done
     printf "\n"
+    export SPAWNING=
 }
 
 start_vms &
@@ -91,6 +93,6 @@ sleep "$TESTTIME"
 echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
 
 # Wait until all VMs exit
-for ((i=1;i<=TOTAL;i++)); do
-    while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_rust.sh" | grep "$BENCHFILE")" ]; do sleep 1; done
-done
+while [ -n "$SPAWNING" ]; do sleep 0.01; done
+echo "All VMs spawned"
+while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_rust.sh" | grep "$BENCHFILE")" ]; do sleep 0.01; done

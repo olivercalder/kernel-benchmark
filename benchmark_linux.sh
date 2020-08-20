@@ -5,7 +5,7 @@ usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
 OPTIONS:
     -h                      display help
     -d                      debug mode: preserve stderr and qemu display (pass -d to start_linux.sh)
-    -o <resultfilename>     write start and end timestamps to the given file once qemu exits
+    -o <resultfilename>     write timestamp IDs to the given file once qemu exits
     -p <outputdir>          write individual qemu outputs to the given directory
     -k                      --enable-kvm in qemu
     -i <imagefile.img>      use specified qemu disk image as the base image, adding any specified
@@ -95,6 +95,7 @@ echo "Test time: $TESTTIME"
 echo "VM spawn interval: $RATE"
 echo "Total VMs to create (total necessary * 1.1): $TOTAL"
 
+SPAWNING="1"
 start_vms() {
     for ((i=1;i<=TOTAL;i++)); do
         bash start_linux.sh -b "$BENCHFILE" $DEBUG $USEKVM -n -i "$IMG" -p "$OUTDIR" &
@@ -102,6 +103,7 @@ start_vms() {
         sleep "$RATE"
     done
     printf "\n"
+    export SPAWNING=
 }
 
 start_vms &
@@ -111,8 +113,9 @@ sleep "$TESTTIME"
 echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
 
 # Wait until all VMs exit
-for ((i=1;i<=TOTAL;i++)); do
-    while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_linux.sh" | grep "$BENCHFILE")" ]; do sleep 1; done
-done
+while [ -n "$SPAWNING" ]; do sleep 0.01; done
+echo "ALL VMs spawned"
+while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_linux.sh" | grep "$BENCHFILE")" ]; do sleep 0.01; done
+
 # If the VMs use a modified disk image, then remove disk image
 [ -n "$NOMOD" ] || rm "$IMG"
