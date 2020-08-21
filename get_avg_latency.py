@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import getopt
 
@@ -11,28 +12,36 @@ OPTIONS:
                                 options:
                                     linux
                                     rust
+    -d <directory>              read output files from given directory
 '''.format(sys.argv[0])
 
 types = ['linux', 'rust']
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'ht:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'ht:d:')
 except getopt.GetoptError as err:
     print(err, file=sys.stderr)
     print(usage, file=sys.stderr)
     exit(1)
 
 ftype = None
+directories = []
 for o, a in optlist:
     if o == '-h':
         print(usage, file=sys.stderr)
         exit(1)
     elif o == '-t':
         ftype = a
+    elif o == '-d':
+        directories.append(a)
     else:
         print('ERROR: option "{}" unrecognized\n'.format(o), file=sys.stderr)
         print(usage, file=sys.stderr)
         exit(1)
+
+for d in directories:
+    for f in os.listdir(d):
+        args.append('{}/{}'.format(d, f))
 
 latencies = []
 questionable = 0
