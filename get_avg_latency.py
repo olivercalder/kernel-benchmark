@@ -12,10 +12,11 @@ OPTIONS:
                                 options:
                                     linux
                                     rust
+                                    docker
     -d <directory>              read output files from given directory
 '''.format(sys.argv[0])
 
-types = ['linux', 'rust']
+types = ['linux', 'rust', 'docker']
 
 try:
     optlist, args = getopt.getopt(sys.argv[1:], 'ht:d:')
@@ -97,6 +98,38 @@ elif ftype == 'rust':
                     except ValueError:
                         question = True
                 elif 'QEMU exited with error code 33' in line:
+                    try:
+                        exit_ts = int(line.split()[0])
+                    except ValueError:
+                        question = True
+                    else:
+                        success = True
+            if question:
+                questionable += 1
+            elif not success:
+                unsuccessful += 1
+            elif start_ts is None or exit_ts is None:
+                questionable += 1
+            else:
+                latency = exit_ts - start_ts
+                latencies.append(latency)
+elif ftype == 'docker':
+    # Files should have the following form:
+    # <timestamp> Docker initiated
+    # <timestamp> Docker exited successfully
+    for filename in args:
+        with open(filename) as infile:
+            start_ts = None
+            exit_ts = None
+            question = False
+            success = False
+            for line in infile:
+                if 'Docker initiated' in line:
+                    try:
+                        start_ts = int(line.split()[0])
+                    except ValueError:
+                        question = True
+                elif 'Docker exited successfully' in line:
                     try:
                         exit_ts = int(line.split()[0])
                     except ValueError:
