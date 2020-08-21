@@ -52,7 +52,23 @@ run_rust 0.0078125
 run_rust 0.00390625
 run_rust 0.001953125
 
+# Docker
+run_docker() {
+    echo "Benchmarking Docker with timestep of $1 trial 1"
+    bash benchmark_docker.sh -o docker-results-r$1.txt -p docker-output-r$1 -r $1 -w 120 -t 60 -m 2>/dev/null
+    echo "Benchmarking Docker with timestep of $1 trial 2"
+    bash benchmark_docker.sh -o docker-results-r$1.txt -p docker-output-r$1 -r $1 -w 120 -t 60 -m 2>/dev/null
+    echo "Benchmarking Docker with timestep of $1 trial 3"
+    bash benchmark_docker.sh -o docker-results-r$1.txt -p docker-output-r$1 -r $1 -w 120 -t 60 -m 2>/dev/null
+}
+run_docker 4
+run_docker 2
+run_docker 1
+run_docker 0.5
+run_docker 0.25
+run_docker 0.125
+run_docker 0.0625
+
 # ones that might halt
 #run_linux 0.5
 #run_linux_kvm 0.03125
-#run_rust 0.001953125    # did not test this one
