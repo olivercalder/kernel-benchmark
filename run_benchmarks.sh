@@ -50,6 +50,7 @@ run_rust 0.03125
 run_rust 0.015625
 run_rust 0.0078125
 run_rust 0.00390625
+run_rust 0.001953125
 
 # ones that might halt
 #run_linux 0.5
