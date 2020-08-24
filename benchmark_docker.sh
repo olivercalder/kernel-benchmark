@@ -8,7 +8,7 @@ OPTIONS:
     -m                      mute output from start_docker.sh stdout (pipe 1> /dev/null)
     -o <resultfilename>     write timestamp IDs to the given file once docker exits
     -p <outputdir>          pass '-p outdir' on to start_docker.sh
-    -r <rate>               set the timestep between calls to spawn new VMs in seconds -- default 10
+    -r <rate>               set the timestep between calls to spawn new containers in seconds -- default 10
     -t <duration>           set the duration of the benchmark in seconds -- default 60
     -w <duration>           set the duration of the warmup time prior to the benchmark -- default 60
 " 1>&2; exit 1; }
@@ -66,8 +66,8 @@ typeset -i i TOTAL
 TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$RATE*1.1))")
 echo "Warmup time: $WARMTIME"
 echo "Test time: $TESTTIME"
-echo "VM spawn interval: $RATE"
-echo "Total VMs to create (total necessary * 1.1): $TOTAL"
+echo "Container spawn interval: $RATE"
+echo "Total containers to create (total necessary * 1.1): $TOTAL"
 
 start_containers() {
     time for ((i=1;i<=TOTAL;i++)); do
@@ -86,5 +86,5 @@ echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
 
 # Wait until all containers exit
 while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_docker.sh" | grep "$DOCKERCMD")" ]; do sleep 0.01; done
-# it is possible that a few short-lived VMs (0.1 of all VMs for the benchmark) might still spawn later
-# but since they are short-lived, this should have negligible effect on the results
+# it is possible that a few short-lived containers (0.1 of all VMs for the benchmark) might still
+# spawn later but since they are short-lived, this should have negligible effect on the results

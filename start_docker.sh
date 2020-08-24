@@ -52,7 +52,7 @@ OUTFILE="$OUTDIR/$OUTFILE"
 
 
 echo "$(date +%s%N) Docker initiated" >> $OUTFILE
-$DOCKERCMD
+eval $DOCKERCMD
 ECODE=$?
 END_TS="$(date +%s%N)"
 if [ $ECODE -eq 0 ]; then
