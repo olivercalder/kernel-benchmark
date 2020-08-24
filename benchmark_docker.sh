@@ -69,22 +69,21 @@ echo "Test time: $TESTTIME"
 echo "Container spawn interval: $RATE"
 echo "Total containers to create (total necessary * 1.1): $TOTAL"
 
-start_containers() {
-    time for ((i=1;i<=TOTAL;i++)); do
-        bash start_docker.sh -b "$BENCHFILE" -i "$DOCKERCMD" -p "$OUTDIR" > $MUTE &
-        printf "\rSpawned container $i"
-        sleep "$RATE"
-    done
-    printf "\n"
+write_begin_end() {
+    sleep "$WARMTIME"
+    echo "BEGIN BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
+    sleep "$TESTTIME"
+    echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
 }
 
-start_containers &
-sleep "$WARMTIME"
-echo "BEGIN BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
-sleep "$TESTTIME"
-echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
+write_begin_end &
+
+for ((i=1;i<=TOTAL;i++)); do
+    bash start_docker.sh -b "$BENCHFILE" -i "$DOCKERCMD" -p "$OUTDIR" > $MUTE &
+    printf "\rSpawned container $i"
+    sleep "$RATE"
+done
+printf "\n"
 
 # Wait until all containers exit
 while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_docker.sh" | grep "$DOCKERCMD")" ]; do sleep 0.01; done
-# it is possible that a few short-lived containers (0.1 of all VMs for the benchmark) might still
-# spawn later but since they are short-lived, this should have negligible effect on the results

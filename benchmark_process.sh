@@ -64,22 +64,18 @@ echo "Test time: $TESTTIME"
 echo "Process spawn interval: $RATE"
 echo "Total processess to create (total necessary * 1.1): $TOTAL"
 
-start_processes() {
-    time for ((i=1;i<=TOTAL;i++)); do
-        bash start_process.sh -b "$BENCHFILE" -i "$SHELLCMD" -p "$OUTDIR" &
-        printf "\rSpawned process $i"
-        sleep "$RATE"
-    done
-    printf "\n"
+write_begin_end() {
+    sleep "$WARMTIME"
+    echo "BEGIN BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
+    sleep "$TESTTIME"
+    echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
 }
 
-start_processes &
-sleep "$WARMTIME"
-echo "BEGIN BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
-sleep "$TESTTIME"
-echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
+write_begin_end &
 
-# Wait until all processes exit
-while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_process.sh" | grep "$SHELLCMD")" ]; do sleep 0.01; done
-# it is possible that a few short-lived processes (0.1 of all VMs for the benchmark) might still
-# spawn later but since they are short-lived, this should have negligible effect on the results
+for ((i=1;i<=TOTAL;i++)); do
+    bash start_process.sh -b "$BENCHFILE" -i "$SHELLCMD" -p "$OUTDIR" &
+    printf "\rSpawned process $i"
+    sleep "$RATE"
+done
+printf "\n"

@@ -75,22 +75,21 @@ echo "Test time: $TESTTIME"
 echo "VM spawn interval: $RATE"
 echo "Total VMs to create (total necessary * 1.1): $TOTAL"
 
-start_vms() {
-    time for ((i=1;i<=TOTAL;i++)); do
-        bash start_rust.sh -b "$BENCHFILE" $DEBUG -i "$BIN" -p "$OUTDIR" &
-        printf "\rSpawned VM $i"
-        sleep "$RATE"
-    done
-    printf "\n"
+write_begin_end() {
+    sleep "$WARMTIME"
+    echo "BEGIN BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
+    sleep "$TESTTIME"
+    echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
 }
 
-start_vms &
-sleep "$WARMTIME"
-echo "BEGIN BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
-sleep "$TESTTIME"
-echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
+write_begin_end &
+
+for ((i=1;i<=TOTAL;i++)); do
+    bash start_rust.sh -b "$BENCHFILE" $DEBUG -i "$BIN" -p "$OUTDIR" &
+    printf "\rSpawned VM $i"
+    sleep "$RATE"
+done
+printf "\n"
 
 # Wait until all VMs exit
 while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_rust.sh" | grep "$BENCHFILE")" ]; do sleep 0.01; done
-# it is possible that a few short-lived VMs (0.1 of all VMs for the benchmark) might still spawn later
-# but since they are short-lived, this should have negligible effect on the results

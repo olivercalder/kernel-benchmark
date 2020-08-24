@@ -95,24 +95,24 @@ echo "Test time: $TESTTIME"
 echo "VM spawn interval: $RATE"
 echo "Total VMs to create (total necessary * 1.1): $TOTAL"
 
-start_vms() {
-    for ((i=1;i<=TOTAL;i++)); do
-        bash start_linux.sh -b "$BENCHFILE" $DEBUG $USEKVM -n -i "$IMG" -p "$OUTDIR" &
-        printf "\rSpawned VM $i"
-        sleep "$RATE"
-    done
-    printf "\n"
+write_begin_end() {
+    sleep "$WARMTIME"
+    echo "BEGIN BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
+    sleep "$TESTTIME"
+    echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
 }
 
-start_vms &
-sleep "$WARMTIME"
-echo "BEGIN BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
-sleep "$TESTTIME"
-echo "END BENCHMARK: ID $TS at $(date +%s%N)" >> "$BENCHFILE"
+write_begin_end &
+
+for ((i=1;i<=TOTAL;i++)); do
+    bash start_linux.sh -b "$BENCHFILE" $DEBUG $USEKVM -n -i "$IMG" -p "$OUTDIR" &
+    printf "\rSpawned VM $i"
+    sleep "$RATE"
+done
+printf "\n"
 
 # Wait until all VMs exit
 while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_linux.sh" | grep "$BENCHFILE")" ]; do sleep 0.01; done
-# it is possible that short-lived VMs might still spawn
 
 # If the VMs use a modified disk image, then remove disk image
 [ -n "$NOMOD" ] || rm "$IMG"
