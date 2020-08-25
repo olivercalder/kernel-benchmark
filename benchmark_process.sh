@@ -4,7 +4,7 @@ usage() { echo "USAGE: bash $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
-    -i <'shell commands'>   execute the given shell commands (default: date +%s%N)
+    -i <'shell commands'>   execute the given shell commands (default: echo \"\$(date +%s%N) Hello World!\")
     -o <resultfilename>     write timestamp IDs to the given file once the process exits
     -p <outputdir>          pass '-p outdir' on to start_process.sh
     -r <rate>               set the timestep between calls to spawn new processes in seconds -- default 10
@@ -12,7 +12,7 @@ OPTIONS:
     -w <duration>           set the duration of the warmup time prior to the benchmark -- default 60
 " 1>&2; exit 1; }
 
-SHELLCMD="time +%s%N"
+SHELLCMD='echo "$(date +%s%N) Hello World!"'
 BENCHFILE=
 OUTDIR=
 RATE="10"
@@ -49,8 +49,6 @@ while getopts ":hi:o:p:r:t:w:" OPT; do
 done
 
 shift $(($OPTIND - 1))  # isolate remaining args
-
-$SHELLCMD > /dev/null
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
 

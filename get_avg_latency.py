@@ -13,10 +13,11 @@ OPTIONS:
                                     linux
                                     rust
                                     docker
+                                    process
     -d <directory>              read output files from given directory
 '''.format(sys.argv[0])
 
-types = ['linux', 'rust', 'docker']
+types = ['linux', 'rust', 'docker', 'process']
 
 try:
     optlist, args = getopt.getopt(sys.argv[1:], 'ht:d:')
@@ -144,6 +145,39 @@ elif ftype == 'docker':
                 questionable += 1
             else:
                 latency = exit_ts - start_ts
+                latencies.append(latency)
+elif ftype == 'process':
+    # Files should have the following form:
+    # <timestamp> Process initiated
+    # <timestamp> Hello World!
+    # <timestamp> Process exited successfully
+    for filename in args:
+        with open(filename) as infile:
+            start_ts = None
+            active_ts = None
+            question = False
+            success = False
+            for line in infile:
+                if 'Process initiated' in line:
+                    try:
+                        start_ts = int(line.split()[0])
+                    except ValueError:
+                        question = True
+                elif 'Hello World!' in line:
+                    try:
+                        active_ts = int(line.split()[0])
+                    except ValueError:
+                        question = True
+                elif 'Process exited successfully' in line:
+                    success = True
+            if question:
+                questionable += 1
+            elif not success:
+                unsuccessful += 1
+            elif start_ts is None or active_ts is None:
+                questionable += 1
+            else:
+                latency = active_ts - start_ts
                 latencies.append(latency)
 elif ftype is None:
     print('ERROR: please specify an output type using -t\n', file=sys.stderr)
