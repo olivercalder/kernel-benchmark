@@ -77,8 +77,8 @@ done
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
 
-[ -n "$BENCHFILE" ] || BENCHFILE="benchmark-$TS-results.txt"
-[ -n "$OUTDIR" ] || OUTDIR="benchmark-$TS-output"
+[ -n "$BENCHFILE" ] || BENCHFILE="benchmark-linux$USEKVM-$TS-results.txt"
+[ -n "$OUTDIR" ] || OUTDIR="benchmark-linux$USEKVM-$TS-output"
 
 if [ -n "$NOMOD" ]; then                # -n flag is present, so do not modify the disk image
     IMG="$IMGTEMP"                      # thus, disregard any scripts passed as arguments

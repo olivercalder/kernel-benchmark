@@ -52,8 +52,8 @@ shift $(($OPTIND - 1))  # isolate remaining args
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
 
-[ -n "$BENCHFILE" ] || BENCHFILE="benchmark-$TS-results.txt"
-[ -n "$OUTDIR" ] || OUTDIR="benchmark-$TS-output"
+[ -n "$BENCHFILE" ] || BENCHFILE="benchmark-process-$TS-results.txt"
+[ -n "$OUTDIR" ] || OUTDIR="benchmark-process-$TS-output"
 
 typeset -i i TOTAL
 TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$RATE*1.1))")
