@@ -1,18 +1,24 @@
 #!/bin/bash
 
-usage() { echo "USAGE: bash $0 [OPTIONS] [IMGNAME]
+usage() { echo "USAGE: bash $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
+    -i <imagename>          specify a name for the new qemu disk image
     -s <size>               create disk image with the given size, default 384M (format from qemu-img manpage)
 " 1>&2; exit 1; }
 
 SIZE="384M"
 
-while getopts ":hs:" OPT; do
+IMG="qemu_image.img"
+
+while getopts ":hi:s:" OPT; do
     case "$OPT" in
         h)
             usage
+            ;;
+        i)
+            IMG="$OPTARG"
             ;;
         s)
             SIZE="$OPTARG"
@@ -23,10 +29,8 @@ while getopts ":hs:" OPT; do
     esac
 done
 
-shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
+shift $(($OPTIND - 1))
 
-
-[ -n "$1" ] && IMG=$1 || IMG=qemu_image.img
 TS=$(date +%s%N)
 DIR="/tmp/mount_dir-$TS"
 

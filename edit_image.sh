@@ -9,14 +9,41 @@
 
 # Based on the instructions from https://www.collabora.com/news-and-blog/blog/2017/01/16/setting-up-qemu-kvm-for-kernel-development/
 
-SHUTDOWN=
-if [[ "$1" == "-s" ]]; then SHUTDOWN="1"; shift; fi
+usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [...]
 
-[ -n "$1" ] && IMG=$1 || IMG=qemu_image.img
+OPTIONS:
+    -h                      display help
+    -i <imagename>          edit the given image (if unspecified, default is qemu_image.img)
+    -s                      write 'shutdown now' to .profile
+                            this occurs automatically if one or more scripts are passed as args
+
+If the -s flag is absent and there are no scripts passed as arguments, the image is mounted and
+chrooted with no other changes made. The user must exit from chroot before the script exits.
+" 1>&2; exit 1; }
+
+IMG="qemu_image.img"
+SHUTDOWN=
+
+while getopts ":hi:s" OPT; do
+    case "$OPT" in
+        h)
+            usage
+            ;;
+        i)
+            IMG="$OPTARG"
+            ;;
+        s)
+            SHUTDOWN="1"
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
 [ -f $IMG ] || { echo "ERROR: qemu disk image does not exist: $IMG"; exit 1; }
-
-shift   # exclude $1 from $@
 
 IS_SCRIPT=
 for file in "$@"; do
