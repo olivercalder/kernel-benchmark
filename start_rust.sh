@@ -8,7 +8,7 @@ OPTIONS:
     -d                      debug mode: preserve qemu display
     -i <path/to/binary>     boot from the given Rust kernel binary
                             (default is rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin)
-    -o <outfilename>        write output of all scripts to the given file
+    -o <outfilename>        write start and end timestamps as well as any serial output to the given output file
     -p <outdir>             write output file to the given directory
 " 1>&2; exit 1; }
 

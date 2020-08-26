@@ -5,8 +5,8 @@ usage() { echo "USAGE: bash $0 [OPTIONS]
 OPTIONS:
     -h                      display help
     -b <resultfile>         benchmark mode: write timestamp ID to the given file once the process exits
-    -i <'shell commands''>  execute the given shell commands (default: echo $(date +%s%N) Hello World!)
-    -o <outfilename>        write output of all commands to the given file
+    -i <'shell commands'>   execute the given shell commands (default: echo $(date +%s%N) Hello World!)
+    -o <outfilename>        write start and end timestamps and the output of all commands to the given file
     -p <outdir>             write output file to the given directory
 " 1>&2; exit 1; }
 

@@ -4,16 +4,16 @@ usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
 
 OPTIONS:
     -h                      display help
-    -b <resultfilename>     benchmark mode: write timestamp ID to the given file once qemu exits
-    -d                      debug mode: preserve qemu display, do not pipe serial output to console
+    -b <resultfile>         benchmark mode: write timestamp ID to the given file once qemu exits
+    -d                      debug mode: preserve qemu display, do not redirect serial output to an I/O pipe
     -k                      --enable-kvm in qemu
     -l                      long lived: don't add shutdown command to the image's .profile automatically
     -n                      do not modify or copy the disk image
-                            - saves a lot of startup time if there is a free preconfigured image
+                            - saves a lot of startup time if there is a preconfigured image
                             - however, ignores any scripts which are passed in as arguments
     -i <imagefile.img>      use specified qemu disk image
-    -o <outfilename>        write output of all scripts to the given file
-    -p <outdir>             write output file(s) in the given directory
+    -o <outfilename>        write start and end timestamps, and output of all scripts, to the given file
+    -p <outdir>             write the output file in the given directory
 " 1>&2; exit 1; }
 
 BENCHFILE=
@@ -75,7 +75,7 @@ done
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
 
 IMG="/tmp/$IMGTEMP-$TS.img"
-if [ -n "$NOMOD" ]; then            # -n flag is present and -c is not
+if [ -n "$NOMOD" ]; then            # -n flag is present
     IMG="$IMGTEMP"                  # directly use the given image
 else                                # -n flag not present, so make a copy of the image, modify it, and use it
     cp "$IMGTEMP" "$IMG"            # make a copy of the disk image so that the original is not modified

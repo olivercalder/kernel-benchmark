@@ -6,7 +6,7 @@ OPTIONS:
     -h                      display help
     -b <resultfile>         benchmark mode: write timestamp ID to the given file once docker exits
     -i <'docker commands'>  execute the given docker commands, rather than 'docker run hello-world'
-    -o <outfilename>        write output of all scripts to the given file
+    -o <outfilename>        write start and end timestamps to the given output file
     -p <outdir>             write output file to the given directory
 " 1>&2; exit 1; }
 
