@@ -4,11 +4,11 @@ import os
 import sys
 import getopt
 
-usage = '''USAGE: python3 {} -t <type> [OPTIONS] FILENAME [FILENAME] [...]
+usage = '''USAGE: python3 {} [OPTIONS] [FILENAME] [...]
 
 OPTIONS:
     -h                          display help message
-    -t <type>                   specify the type of output
+    -t <type>                   specify the type of output -- REQUIRED
                                 options:
                                     linux
                                     rust

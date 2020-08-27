@@ -4,14 +4,14 @@ usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
 
 OPTIONS:
     -h                      display help
-    -d                      debug mode: preserve stderr and qemu display (pass -d to start_linux.sh)
-    -o <resultfilename>     write timestamp IDs to the given file once qemu exits
-    -p <outputdir>          write individual qemu outputs to the given directory
-    -k                      --enable-kvm in qemu
+    -d                      debug mode: preserve qemu display and serial output (pass -d to start_linux.sh)
     -i <imagefile.img>      use specified qemu disk image as the base image, adding any specified
                                 scripts to it as usual before creating copies so that each VM can 
                                 use its own (warning: this script always uses a lot of disk space)
+    -k                      --enable-kvm in qemu
     -n                      do not modify the given image file (thus ignores any scripts in args)
+    -o <resultfilename>     write timestamp IDs to the given file once qemu exits
+    -p <outputdir>          write individual qemu outputs to the given directory
     -r <rate>               set the timestep between calls to spawn new VMs in seconds -- default 10
     -t <duration>           set the duration of the benchmark in seconds -- default 60
     -w <duration>           set the duration of the warmup time prior to the benchmark -- default 60
