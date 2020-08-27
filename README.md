@@ -436,7 +436,7 @@ We executed `run_benchmarks.sh` and computed the latencies and throughputs from 
 
 First, the latencies of each system when there is no contention (ie. the `start_*.sh` script is called when no other scripts are running) are shown in the chart below.
 
-![Latency without contention](Results/Latency without contention.png)
+![Latency without contention](Results/Latency_without_contention.png)
 
 From the chart, we see that the process outperforms all other systems, with a latency on the order of a few milliseconds. The Rust unikernel running in QEMU performs second best, on the order of around 2^-2 seconds. Following this, Docker has a latency of slightly less than one second, on the order of 2^0 seconds. Next, Linux in QEMU with KVM enabled has a latency a few times higher than a container, on the order of 2^2 seconds. Lastly, Linux without KVM enabled has a latency of around 2^4 seconds. Thus, with the exception of the process, we can see that the increases rather steadily by around two orders of magnitude.
 
@@ -444,7 +444,7 @@ From the chart, we see that the process outperforms all other systems, with a la
 
 Next, the latencies of each system when under load are shown in the chart below. In this chart, the x-axis represents the added time delay between each invocation of the `start_*.sh` function. This time delay begins at 4 seconds and decreases by half for each benchmark until the host system can no longer handle the load.
 
-![Latency vs time delay](Results/Latency vs Time Delay.png)
+![Latency vs time delay](Results/Latency_vs_Time_Delay.png)
 
 We once again see that the process outperforms all other systems, and that it has a minimal increase in latency as load increases. The Rust kernel is the only other system for which latency does not increase under load. Interestingly, though Docker begins with a latency lower than that of Linux with KVM, we see that latency spikes dramatically between the time delays of 0.5 and 0.25 seconds.Linux with KVM fares much better, yielding no noticable increase in latency until the time delay decreases below 0.125 seconds. Without KVM, Linux has a much higher latency, and with a time delay of 0.5, many of the VMs fail to properly initialize (due to contention for `udev`) and thus hang indefinitely. QEMU with KVM thus provides admirable benefits over QEMU alone. This makes it even more impressive that the Rust kernel, running on QEMU without KVM, is able to perform very well under a load much heavier (32x heavier) than Linux running with KVM.
 
@@ -452,7 +452,7 @@ We once again see that the process outperforms all other systems, and that it ha
 
 Lastly, the throughputs of each system under load are show in the chart below. Once again, the x-axis represents the added time delay between each invocation of the `start_*.sh` function, which begins at 4 seconds and decreases by half for each benchmark until the host system can no longer handle the load.
 
-![Throughput vs time delay](Results/Throughput vs Time Delay.png)
+![Throughput vs time delay](Results/Throughput_vs_Time_Delay.png)
 
 The throughputs align closely with the latencies above: when latency increases, we see a drop in throughput. Notably, however, when Docker and QEMU with KVM experience their first spikes in latency, the throughput at that same time delay continues to increase, albeit at a much lower rate. As the time delay increases, the latency of Docker continues to increase, and between time delays of 0.125 and 0.0625 seconds, resource contention causes the throughput of Docker to drop to near zero. In particular, Docker began to throw errors about `fork` being unavailable, since Docker had managed to fork 1546814 (`ulimit -u`) processes. This was not a problem with any other system, even when spawning instances at a rate 32x as high as Docker's breaking point.
 
