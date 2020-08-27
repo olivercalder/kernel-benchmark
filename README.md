@@ -25,8 +25,8 @@ Additionally, calls `create_image.sh` if the user types `y` or pipes `y` into st
 
 #### Usage:
 
-```bash
-$ bash build_linux.sh
+```sh
+$ sh build_linux.sh
 ```
 
 #### Dependencies:
@@ -48,8 +48,8 @@ Due to the way in which the bootable binary is created by the external `bootimag
 
 #### Usage:
 
-```bash
-$ bash build_rust.sh
+```sh
+$ sh build_rust.sh
 ```
 
 #### Dependencies:
@@ -68,8 +68,8 @@ If you do not have root privileges or access to a Debian-based Linux distributio
 
 #### Usage:
 
-```bash
-$ bash create_image.sh [OPTIONS]
+```sh
+$ sh create_image.sh [OPTIONS]
 ```
 
 Option      | Description
@@ -88,14 +88,14 @@ Option      | Description
 
 ### `edit_image.sh`
 
-Modifies a QEMU disk image by copying all specified scripts to the disk image (`/root` directory) and adding calls to each script and `shutdown now` in `/root/.profile`. For each script, the script call is added to `/root/.profile` iff there exist a "shebang" at the top of the file, ie. `#!/bin/bash` or `#!/usr/bin/env python3`.
+Modifies a QEMU disk image by copying all specified scripts to the disk image (`/root` directory) and adding calls to each script and `shutdown now` in `/root/.profile`. For each script, the script call is added to `/root/.profile` iff there exist a "shebang" at the top of the file, ie. `#!/bin/sh` or `#!/usr/bin/env python3`.
 
 If no scripts are specified and the `-s` flag is not passed, then simply mount the disk image and `chroot` into it which requires root privileges.
 
 #### Usage:
 
-```bash
-$ bash edit_image.sh [OPTIONS] [SCRIPT] [...]
+```sh
+$ sh edit_image.sh [OPTIONS] [SCRIPT] [...]
 ```
 
 Option              | Description
@@ -123,8 +123,8 @@ Starts a Docker container running the specified command. If no command is specif
 
 #### Usage:
 
-```bash
-$ bash start_docker.sh [OPTIONS]
+```sh
+$ sh start_docker.sh [OPTIONS]
 ```
 
 Option                      | Description
@@ -145,8 +145,8 @@ Starts the Linux kernel in QEMU with the given QEMU disk image and runs any scri
 
 #### Usage:
 
-```bash
-$ bash start_linux.sh [OPTIONS] [SCRIPT] [...]
+```sh
+$ sh start_linux.sh [OPTIONS] [SCRIPT] [...]
 ```
 
 Option              | Description
@@ -168,12 +168,12 @@ Option              | Description
 
 ### `start_process.sh`
 
-Starts the given process natively via a bash command on the host machine. If no command is specified, this defaults to `echo $(date +%s%N) Hello World!`.
+Starts the given process natively via a shell command on the host machine. If no command is specified, this defaults to `echo $(date +%s%N) Hello World!`.
 
 #### Usage:
 
-```bash
-$ bash start_process.sh [OPTIONS]
+```sh
+$ sh start_process.sh [OPTIONS]
 ```
 
 Option                  | Description
@@ -196,8 +196,8 @@ To modify the Rust kernel, replace the `async fn sample_application()` with one 
 
 #### Usage:
 
-```bash
-$ bash start_rust.sh [OPTIONS]
+```sh
+$ sh start_rust.sh [OPTIONS]
 ```
 
 Option                  | Description
@@ -225,7 +225,7 @@ For the official benchmarks, a warmup time of 120 seconds and a test time of 60 
 
 All tests were performed on a dual-socket Intel Xeon E5-2699 v3 @ 2.30GHz with a total of 72 logical cores and 377.7 GiB total memory and a network-mounted filesystem. The host OS was Ubuntu 16.04.6 LTS with Linux kernel 4.4.0, running Docker version 18.09.7, QEMU version 2.5.0, and rustc 1.47.0-nightly.
 
-Note that the overhead of iterating through a loop in bash, initiating the backgrounded processes, and using the `sleep` command become increasingly significant as the time step approaches 1 millisecond (as the benchmarks do in the case of the Rust kernel and Linux process). Thus, changes in the time step are not directly proportional to the true time between subsequent spawns. However, since all benchmark scripts use the same methodology and time steps, the benchmarks allow for direct comparison between the performances of the various process formats, which is the primary goal of the experiment.
+Note that the overhead of using a loop in sh, initiating the backgrounded processes, and using the `sleep` command become increasingly significant as the time step approaches 1 millisecond (as the benchmarks do in the case of the Rust kernel and Linux process). Thus, changes in the time step are not directly proportional to the true time between subsequent spawns. However, since all benchmark scripts use the same methodology and time steps, the benchmarks allow for direct comparison between the performances of the various process formats, which is the primary goal of the experiment.
 
 ### `benchmark_docker.sh`
 
@@ -233,8 +233,8 @@ Benchmarks the performance of running multiple Docker containers under load by r
 
 #### Usage:
 
-```bash
-$ bash benchmark_docker.sh [OPTIONS]
+```sh
+$ sh benchmark_docker.sh [OPTIONS]
 ```
 
 Option                      | Description
@@ -260,8 +260,8 @@ For official benchmarks, a QEMU disk image preconfigured to run `timescript.sh` 
 
 #### Usage:
 
-```bash
-$ bash benchmark_linux.sh [OPTIONS] [SCRIPT] [...]
+```sh
+$ sh benchmark_linux.sh [OPTIONS] [SCRIPT] [...]
 ```
 
 Option              | Description
@@ -287,8 +287,8 @@ Benchmarks the performance of running multiple Linux processes under load by rep
 
 #### Usage:
 
-```bash
-$ bash benchmark_process.sh [OPTIONS]
+```sh
+$ sh benchmark_process.sh [OPTIONS]
 ```
 
 Option                  | Description
@@ -313,8 +313,8 @@ For official benchmarks, the Rust kernel was used directly from [https://github.
 
 #### Usage:
 
-```bash
-$ bash benchmark_rust.sh [OPTIONS] [SCRIPT] [...]
+```sh
+$ sh benchmark_rust.sh [OPTIONS] [SCRIPT] [...]
 ```
 
 Option                  | Description
@@ -342,8 +342,8 @@ The minimum time steps used in this script reflect the capabilities of the test 
 
 #### Usage:
 
-```bash
-$ bash run_benchmarks.sh
+```sh
+$ sh run_benchmarks.sh
 ```
 
 #### Dependencies:
@@ -360,7 +360,7 @@ Calculates the average latency of one or more benchmarks by extracting timestamp
 
 #### Usage:
 
-```bash
+```sh
 $ python3 get_avg_latency.py [OPTIONS] [FILENAME] [...]
 ```
 
@@ -420,7 +420,7 @@ Calculates the average throughput of one or more benchmarks by extracting timest
 
 #### Usage:
 
-```bash
+```sh
 $ python3 get_avg_throughput.py FILE [FILE] [...]
 ```
 
@@ -458,7 +458,7 @@ The throughputs align closely with the latencies above: when latency increases, 
 
 Linux without KVM, as before, had the lowest throughput of all. This is likely because both Docker and Linux without KVM run complex runtimes which themselves operate fully atop the host kernel, whereas KVM grants the Linux kernel direct hardware access, and processes are vastly more lightweight.
 
-Thus, the anomaly is again the Rust kernel which, despite running in standard QEMU without KVM, is still able to scale better under load than anything other than a process. Only when the time delay approaches the time required to initiate a process can we see the throughput the Rust kernel begin to fall below that of the process. No time delays below 0.001953125 seconds (1/512) were tested, since at that point the time delays become less significant compared to the overhead of spawning and backgrounding a new process from bash. Thus, despite its higher base latency than a process, the throughput of the Rust kernel was able to scale with load as well as a process until the time delay approached 5 milliseconds, and after that, throughput continued to increase, albeit at a decreased rate.
+Thus, the anomaly is again the Rust kernel which, despite running in standard QEMU without KVM, is still able to scale better under load than anything other than a process. Only when the time delay approaches the time required to initiate a process can we see the throughput the Rust kernel begin to fall below that of the process. No time delays below 0.001953125 seconds (1/512) were tested, since at that point the time delays become less significant compared to the overhead of spawning and backgrounding a new process from the shell. Thus, despite its higher base latency than a process, the throughput of the Rust kernel was able to scale with load as well as a process until the time delay approached 5 milliseconds, and after that, throughput continued to increase, albeit at a decreased rate.
 
 ## Acknowledgements
 

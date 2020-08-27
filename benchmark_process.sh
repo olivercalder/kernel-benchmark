@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-usage() { echo "USAGE: bash $0 [OPTIONS]
+usage() { echo "USAGE: sh $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
@@ -48,14 +48,13 @@ while getopts ":hi:o:p:r:t:w:" OPT; do
     esac
 done
 
-shift $(($OPTIND - 1))  # isolate remaining args
+shift $((OPTIND - 1))  # isolate remaining args
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
 
 [ -n "$BENCHFILE" ] || BENCHFILE="benchmark-process-$TS-results.txt"
 [ -n "$OUTDIR" ] || OUTDIR="benchmark-process-$TS-output"
 
-typeset -i i TOTAL
 TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$RATE*1.1))")
 echo "Warmup time: $WARMTIME"
 echo "Test time: $TESTTIME"
@@ -71,9 +70,11 @@ write_begin_end() {
 
 write_begin_end &
 
-for ((i=1;i<=TOTAL;i++)); do
-    bash start_process.sh -b "$BENCHFILE" -i "$SHELLCMD" -p "$OUTDIR" &
-    printf "\rSpawned process $i"
+i=1
+while [ "$i" -le "$TOTAL" ]; do
+    sh start_process.sh -b "$BENCHFILE" -i "$SHELLCMD" -p "$OUTDIR" &
+    printf "\rSpawned process %s" "$i"
     sleep "$RATE"
+    i=$((i + 1))
 done
 printf "\n"

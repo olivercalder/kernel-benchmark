@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
+usage() { echo "USAGE: sh $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
 
 OPTIONS:
     -h                      display help
@@ -65,14 +65,14 @@ while getopts ":hdo:p:ki:nr:t:w:" OPT; do
     esac
 done
 
-shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
+shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
 [ -f "linux/arch/x86_64/boot/bzImage" ] || { echo "ERROR: linux kernel not found at linux/arch/x86_64/boot/bzImage"; exit 1; }
 
-[ -f $IMGTEMP ] || { echo "ERROR: qemu disk image does not exist: $IMGTEMP"; exit 1; }
+[ -f "$IMGTEMP" ] || { echo "ERROR: qemu disk image does not exist: $IMGTEMP"; exit 1; }
 
 for file in "$@"; do
-    [ -f $file ] || { echo "ERROR: file does not exist: $file"; exit 1; }
+    [ -f "$file" ] || { echo "ERROR: file does not exist: $file"; exit 1; }
 done
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
@@ -85,10 +85,9 @@ if [ -n "$NOMOD" ]; then                # -n flag is present, so do not modify t
 else                                    # -n flag is not present, so copy the image template and add scripts
     IMG="/tmp/$IMGTEMP-$TS.img"
     cp "$IMGTEMP" "$IMG"                # copy the template to /tmp and name it with a timestamp
-    bash edit_image.sh -s "$IMG" "$@"   # copy all script files to the image and add them to .profile
+    sh edit_image.sh -s "$IMG" "$@"   # copy all script files to the image and add them to .profile
 fi
 
-typeset -i i TOTAL
 TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$RATE*1.1))")
 echo "Warmup time: $WARMTIME"
 echo "Test time: $TESTTIME"
@@ -104,10 +103,12 @@ write_begin_end() {
 
 write_begin_end &
 
-for ((i=1;i<=TOTAL;i++)); do
-    bash start_linux.sh -b "$BENCHFILE" $DEBUG $USEKVM -n -i "$IMG" -p "$OUTDIR" &
-    printf "\rSpawned VM $i"
+i=1
+while [ "$i" -le "$TOTAL" ]; do
+    sh start_linux.sh -b "$BENCHFILE" $DEBUG $USEKVM -n -i "$IMG" -p "$OUTDIR" &
+    printf "\rSpawned VM %s" "$i"
     sleep "$RATE"
+    i=$((i + 1))
 done
 printf "\n"
 

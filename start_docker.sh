@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-usage() { echo "USAGE: bash $0 [OPTIONS]
+usage() { echo "USAGE: sh $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
@@ -38,7 +38,7 @@ while getopts ":hb:i:o:p:" OPT; do
     esac
 done
 
-shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
+shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
 NAME="docker-$TS"
@@ -51,16 +51,16 @@ OUTFILE="$OUTDIR/$OUTFILE"
 ##### BEGIN RUNNING DOCKER #####
 
 
-echo "$(date +%s%N) Docker initiated" >> $OUTFILE
+echo "$(date +%s%N) Docker initiated" >> "$OUTFILE"
 eval $DOCKERCMD
 ECODE=$?
 END_TS="$(date +%s%N)"
 if [ $ECODE -eq 0 ]; then
-    echo "$END_TS Docker exited successfully" >> $OUTFILE
+    echo "$END_TS Docker exited successfully" >> "$OUTFILE"
     [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"
     true
 else
-    echo "$END_TS Docker exited with error code $ECODE" >> $OUTFILE
+    echo "$END_TS Docker exited with error code $ECODE" >> "$OUTFILE"
     #[ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"   # docker actually fails under load, so don't write failures as successes
     true
 fi

@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-usage() { echo "USAGE: bash $0 [OPTIONS]
+usage() { echo "USAGE: sh $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
@@ -53,7 +53,7 @@ while getopts ":hi:mo:p:r:t:w:" OPT; do
     esac
 done
 
-shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
+shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
 $DOCKERCMD > /dev/null
 
@@ -62,7 +62,6 @@ TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique 
 [ -n "$BENCHFILE" ] || BENCHFILE="benchmark-docker-$TS-results.txt"
 [ -n "$OUTDIR" ] || OUTDIR="benchmark-docker-$TS-output"
 
-typeset -i i TOTAL
 TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$RATE*1.1))")
 echo "Warmup time: $WARMTIME"
 echo "Test time: $TESTTIME"
@@ -78,10 +77,13 @@ write_begin_end() {
 
 write_begin_end &
 
-for ((i=1;i<=TOTAL;i++)); do
-    bash start_docker.sh -b "$BENCHFILE" -i "$DOCKERCMD" -p "$OUTDIR" > $MUTE &
-    printf "\rSpawned container $i"
+i=1
+#for ((i=1;i<=TOTAL;i++)); do
+while [ "$i" -le "$TOTAL" ]; do
+    sh start_docker.sh -b "$BENCHFILE" -i "$DOCKERCMD" -p "$OUTDIR" > $MUTE &
+    printf "\rSpawned container %s" "$i"
     sleep "$RATE"
+    i=$((i + 1))
 done
 printf "\n"
 

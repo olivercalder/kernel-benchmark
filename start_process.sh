@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-usage() { echo "USAGE: bash $0 [OPTIONS]
+usage() { echo "USAGE: sh $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
@@ -38,7 +38,7 @@ while getopts ":hb:i:o:p:" OPT; do
     esac
 done
 
-shift $(($OPTIND - 1))  # isolate remaining args
+shift $((OPTIND - 1))  # isolate remaining args
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
 NAME="process-$TS"

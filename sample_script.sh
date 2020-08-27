@@ -1,3 +1,5 @@
+#!/bin/sh
+
 echo 'This is a sample script!'
 NEWVAR=2
 VAR=1

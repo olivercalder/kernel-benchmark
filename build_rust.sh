@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 
 # rustup must be installed
-which rustup > /dev/null || { echo "ERROR: rustup not installed; install from https://www.rust-lang.org/tools/install"; exit 1; }
-which qemu-system-x86_64 > /dev/null || { echo "ERROR: please install qemu-system"; exit 1; }
+command -v rustup > /dev/null || { echo "ERROR: rustup not installed; install from https://www.rust-lang.org/tools/install"; exit 1; }
+command -v qemu-system-x86_64 > /dev/null || { echo "ERROR: please install qemu-system"; exit 1; }
 
 CWD=$(pwd)
 
@@ -17,7 +17,7 @@ if [ ! -d rust-kernel ]; then
     cd ../..
 fi
 
-wait-to-kill-qemu () {
+waittokillqemu () {
     while true; do
         kill $(ps -aux | grep "qemu-system-x86_64" | grep "bootimage-test_os.bin" | awk '{print $2}') 2> /dev/null && break
         sleep 1
@@ -26,9 +26,9 @@ wait-to-kill-qemu () {
 
 cd rust-kernel/test_os
 cargo clean
-wait-to-kill-qemu &     # run wait-to-kill-qemu in the background
+waittokillqemu &            # run waittokillqemu in the background
 time cargo run --release    # compile the rust kernel using cargo run in order to build bootimage (and time it for fun)
 
-kill $(ps -aux | grep wait-to-kill-qemu | awk '{print $2}') 2> /dev/null    # kill the sleeping task if the compile failed
+kill "$(ps -aux | grep waittokillqemu | awk '{print $2}')" 2> /dev/null    # kill the sleeping task if the compile failed
 
-cd $CWD
+cd "$CWD"

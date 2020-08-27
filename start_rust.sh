@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-usage() { echo "USAGE: bash $0 [OPTIONS]
+usage() { echo "USAGE: sh $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
@@ -46,7 +46,7 @@ while getopts ":hb:di:o:p:" OPT; do
     esac
 done
 
-shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
+shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
 [ -f "$BIN" ] || { echo "ERROR: binary does not exist: $BIN"; exit 1; }
 
@@ -67,7 +67,8 @@ else
 fi
 
 # kill the sleeping task from build_rust.sh if a previous compile happened to fail
-kill $(ps -aux | grep wait-to-kill-qemu | awk '{print $2}') 2> /dev/null
+kill "$(ps -aux |  awk '/waittokillqemu/ {print $2}')" 2> /dev/null
+
 
 ##### DEFINE FUNCTIONS FOR I/O #####
 
@@ -76,18 +77,19 @@ kill $(ps -aux | grep wait-to-kill-qemu | awk '{print $2}') 2> /dev/null
 do_now() {
     CMD=$1
     echo "now doing $CMD"
-    printf "$CMD\n" > "$NAMEDPIPE.in"
+    printf "%s\n" "$CMD" > "$NAMEDPIPE.in"
 }
 
 # wait until any of the given strings appear in the output buffer, then return
 wait_for() {
     BREAK=
-    while read line; do
+    while read -r line; do
         for STR in "$@"; do
-            if [[ "$line" == *"$STR"* ]]; then
-                BREAK=1
-                break
-            fi
+            case "$line" in
+                *$STR*)
+                    BREAK=1
+                    break
+            esac
         done
         [ -n "$BREAK" ] && break
     done < "$NAMEDPIPE.out"
@@ -99,12 +101,13 @@ write_until() {
     OUTFILE=$1
     BREAK=      # initialize empty BREAK variable
     shift       # shift arg index by 1
-    while read outline; do
+    while read -r outline; do
         for STR in "$@"; do   # if no further arguments, read indefinitely
-            if [[ "$outline" == *"$STR"* ]]; then
-                BREAK=1 # remember to break from the actual read loop
-                break   # break from the inner for loop
-            fi
+            case "$outline" in
+                *$STR*)
+                    BREAK=1
+                    break
+            esac
         done
         [ -n "$BREAK" ] && break    # break if the BREAK variable has been set
         echo "$outline " | sed 's/.*//g' >> $OUTFILE
@@ -115,15 +118,15 @@ write_until() {
 ##### BEGIN RUNNING QEMU IN THE BACKGROUND #####
 
 
-echo "$(date +%s%N) QEMU initiated" >> $OUTFILE && qemu-system-x86_64 \
+echo "$(date +%s%N) QEMU initiated" >> "$OUTFILE" && qemu-system-x86_64 \
     -drive format=raw,file=rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin \
     -snapshot \
     -no-reboot \
     -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
     $PIPE \
     $NODISP \
-    && { echo "$(date +%s%N) QEMU exited successfully" >> $OUTFILE ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" || true; } \
-    || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> $OUTFILE ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" || true; } \
+    && { echo "$(date +%s%N) QEMU exited successfully" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; true; } \
+    || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; true; } \
     &
 
 # 0xf4 is used to communicate exit codes to qemu

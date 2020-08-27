@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Mounts the given disk image for editing. The first argument is the disk image
 # filename, and all remaining arguments are files to be copied to the image.
@@ -9,7 +9,7 @@
 
 # Based on the instructions from https://www.collabora.com/news-and-blog/blog/2017/01/16/setting-up-qemu-kvm-for-kernel-development/
 
-usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [...]
+usage() { echo "USAGE: sh $0 [OPTIONS] [SCRIPT] [...]
 
 OPTIONS:
     -h                      display help
@@ -41,21 +41,21 @@ while getopts ":hi:s" OPT; do
     esac
 done
 
-shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
+shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
-[ -f $IMG ] || { echo "ERROR: qemu disk image does not exist: $IMG"; exit 1; }
+[ -f "$IMG" ] || { echo "ERROR: qemu disk image does not exist: $IMG"; exit 1; }
 
 IS_SCRIPT=
 for file in "$@"; do
-    [ -f $file ] || { echo "ERROR: file does not exist: $file"; exit 1; }
+    [ -f "$file" ] || { echo "ERROR: file does not exist: $file"; exit 1; }
     IS_SCRIPT="1"
 done
 
 TS="$(date +%s%N)"
 DIR="/tmp/mount-point-$IMG.dir"
 NEWPROFILE="/tmp/$TS.profile"
-mkdir -p $DIR
-sudo mount -o loop $IMG $DIR    # uses a loop device to map the disk image to the directory
+mkdir -p "$DIR"
+sudo mount -o loop "$IMG" "$DIR"    # uses a loop device to map the disk image to the directory
 if [ -n "$IS_SCRIPT" ] || [ -n "$SHUTDOWN" ]; then
     PROFILE="$DIR/root/.profile"
     sudo cp "$PROFILE" "$NEWPROFILE.tmp"
@@ -70,7 +70,7 @@ if [ -n "$IS_SCRIPT" ] || [ -n "$SHUTDOWN" ]; then
     echo "shutdown now" >> "$NEWPROFILE"         # actually shutdown
     sudo mv "$NEWPROFILE" "$PROFILE"
 else
-    sudo chroot $DIR
+    sudo chroot "$DIR"
 fi
-sudo umount $DIR
-rmdir $DIR
+sudo umount "$DIR"
+rmdir "$DIR"

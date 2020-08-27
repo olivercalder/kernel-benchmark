@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-usage() { echo "USAGE: bash $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
+usage() { echo "USAGE: sh $0 [OPTIONS] [SCRIPT] [SCRIPT2] [...]
 
 OPTIONS:
     -h                      display help
@@ -62,14 +62,14 @@ while getopts ":hdklnb:i:o:p:" OPT; do
     esac
 done
 
-shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
+shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
 [ -f "linux/arch/x86_64/boot/bzImage" ] || { echo "ERROR: linux kernel not found at linux/arch/x86_64/boot/bzImage"; exit 1; }
 
-[ -f $IMGTEMP ] || { echo "ERROR: qemu disk image does not exist: $IMGTEMP"; exit 1; }
+[ -f "$IMGTEMP" ] || { echo "ERROR: qemu disk image does not exist: $IMGTEMP"; exit 1; }
 
 for file in "$@"; do
-    [ -f $file ] || { echo "ERROR: file does not exist: $file"; exit 1; }
+    [ -f "$file" ] || { echo "ERROR: file does not exist: $file"; exit 1; }
 done
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
@@ -79,7 +79,7 @@ if [ -n "$NOMOD" ]; then            # -n flag is present
     IMG="$IMGTEMP"                  # directly use the given image
 else                                # -n flag not present, so make a copy of the image, modify it, and use it
     cp "$IMGTEMP" "$IMG"            # make a copy of the disk image so that the original is not modified
-    bash edit_image.sh $SHUTDOWN "$IMG" "$@"    # copy all script files to the image and add them to .profile
+    sh edit_image.sh $SHUTDOWN "$IMG" "$@"    # copy all script files to the image and add them to .profile
 fi
 
 NAME="qemu-linux$USEKVM-$TS"
@@ -105,18 +105,20 @@ fi
 do_now() {
     CMD=$1
     echo "now doing $CMD"
-    printf "$CMD\n" > "$NAMEDPIPE.in"
+    printf "%s\n" "$CMD" > "$NAMEDPIPE.in"
 }
 
 # wait until any of the given strings appear in the output buffer, then return
 wait_for() {
     BREAK=
-    while read line; do
+    while read -r line; do
         for STR in "$@"; do
-            if [[ "$line" == *"$STR"* ]]; then
-                BREAK=1
-                break
-            fi
+            case "$line" in
+                *$STR*)
+                    BREAK=1
+                    break
+                    ;;
+            esac
         done
         [ -n "$BREAK" ] && break
     done < "$NAMEDPIPE.out"
@@ -128,15 +130,17 @@ write_until() {
     OUTFILE=$1
     BREAK=      # initialize empty BREAK variable
     shift       # shift arg index by 1
-    while read outline; do
+    while read -r outline; do
         for STR in "$@"; do   # if no further arguments, read indefinitely
-            if [[ "$outline" == *"$STR"* ]]; then
-                BREAK=1 # remember to break from the actual read loop
-                break   # break from the inner for loop
-            fi
+            case "$outline" in
+                *$STR*)
+                    BREAK=1
+                    break
+                    ;;
+            esac
         done
         [ -n "$BREAK" ] && break    # break if the BREAK variable has been set
-        echo "$outline " | sed 's/.*//g' >> $OUTFILE
+        echo "$outline " | sed 's/.*//g' >> "$OUTFILE"
     done < "$NAMEDPIPE.out"
 }
 
@@ -146,7 +150,7 @@ write_until() {
 
 echo "$(date +%s%N) QEMU initiated" >> "$OUTFILE" && qemu-system-x86_64 \
     -kernel linux/arch/x86_64/boot/bzImage \
-    -hda $IMG \
+    -hda "$IMG" \
     -snapshot \
     -append "root=/dev/sda console=ttyS0" \
     -no-reboot \
@@ -154,8 +158,8 @@ echo "$(date +%s%N) QEMU initiated" >> "$OUTFILE" && qemu-system-x86_64 \
     -device isa-debug-exit \
     $PIPE \
     $NODISP \
-    && { echo "$(date +%s%N) QEMU exited successfully" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" || true; } \
-    || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" || true; } \
+    && { echo "$(date +%s%N) QEMU exited successfully" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; true; } \
+    || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; true; } \
     &
 # write timestamp and start qemu with the named pipe for I/O, and background it,
 # since we need to begin watching its output; when it exits, write the timestamp

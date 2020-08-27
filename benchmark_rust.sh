@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-usage() { echo "USAGE: bash $0 [OPTIONS]
+usage() { echo "USAGE: sh $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
@@ -18,7 +18,6 @@ BIN="rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin"
 BENCHFILE=
 DEBUG=
 OUTDIR=
-NOMOD=
 RATE="10"
 TESTTIME="60"
 WARMTIME="60"
@@ -55,12 +54,12 @@ while getopts ":hdi:o:p:r:t:w:" OPT; do
     esac
 done
 
-shift $(($OPTIND - 1))  # isolate remaining args (which should be script filenames)
+shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
 [ -f "linux/arch/x86_64/boot/bzImage" ] || { echo "ERROR: linux kernel not found at linux/arch/x86_64/boot/bzImage"; exit 1; }
 
 for file in "$@"; do
-    [ -f $file ] || { echo "ERROR: file does not exist: $file"; exit 1; }
+    [ -f "$file" ] || { echo "ERROR: file does not exist: $file"; exit 1; }
 done
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
@@ -68,7 +67,6 @@ TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique 
 [ -n "$BENCHFILE" ] || BENCHFILE="benchmark-rust-$TS-results.txt"
 [ -n "$OUTDIR" ] || OUTDIR="benchmark-rust-$TS-output"
 
-typeset -i i TOTAL
 TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$RATE*1.1))")
 echo "Warmup time: $WARMTIME"
 echo "Test time: $TESTTIME"
@@ -84,10 +82,12 @@ write_begin_end() {
 
 write_begin_end &
 
-for ((i=1;i<=TOTAL;i++)); do
-    bash start_rust.sh -b "$BENCHFILE" $DEBUG -i "$BIN" -p "$OUTDIR" &
-    printf "\rSpawned VM $i"
+i=1
+while [ "$i" -le "$TOTAL" ]; do
+    sh start_rust.sh -b "$BENCHFILE" $DEBUG -i "$BIN" -p "$OUTDIR" &
+    printf "\rSpawned VM %s" "$i"
     sleep "$RATE"
+    i=$((i + 1))
 done
 printf "\n"
 
