@@ -1,4 +1,4 @@
 linux
 rust-kernel
-qemu_image.img
+*.img
 *.swp
