@@ -436,7 +436,7 @@ We executed `run_benchmarks.sh` and computed the latencies and throughputs from 
 
 First, the latencies of each system when there is no contention (ie. the `start_*.sh` script is called when no other scripts are running) are shown in the chart below.
 
-![Latency without contention](Results/Latency_without_contention.png)
+![Latency without Contention](Results/Latency_without_Contention.png)
 
 From the chart, we see that the process outperforms all other systems, with a latency on the order of a few milliseconds. The Rust unikernel running in QEMU performs second best, on the order of around 2^-2 seconds. Following this, Docker has a latency of slightly less than one second, on the order of 2^0 seconds. Next, Linux in QEMU with KVM enabled has a latency a few times higher than a container, on the order of 2^2 seconds. Lastly, Linux without KVM enabled has a latency of around 2^4 seconds. Thus, with the exception of the process, we can see that the increases rather steadily by around two orders of magnitude.
 
