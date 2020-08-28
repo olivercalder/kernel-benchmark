@@ -55,6 +55,10 @@ done
 
 shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
+# Gets name so it can be cleaned up later
+# This doesn't work if something other than the primary command is the third item in the command
+NAME="$(echo "$DOCKERCMD" | awk '{$1=$2=""; print $3}')"
+
 $DOCKERCMD > /dev/null
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
@@ -90,5 +94,5 @@ printf "\n"
 # Wait until all containers exit or fail
 while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_docker.sh" | grep "$DOCKERCMD")" ]; do sleep 0.1; done
 
-# Remove all docker containers that stopped so that they are cleaned up for future benchmarks
-docker rm $(docker ps -a | grep "$DOCKERCMD" | awk '{print $1}')    # need single quotes for print $1, so use grep
+# Remove all docker containers that stopped from this benchmark so that they are cleaned up for future benchmarks
+docker rm $(docker ps -a | grep "$NAME" | awk '{print $1}')     # need single quotes for print $1, so use grep
