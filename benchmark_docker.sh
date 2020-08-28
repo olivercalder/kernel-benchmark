@@ -87,5 +87,8 @@ while [ "$i" -le "$TOTAL" ]; do
 done
 printf "\n"
 
-# Wait until all containers exit
-while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_docker.sh" | grep "$DOCKERCMD")" ]; do sleep 0.01; done
+# Wait until all containers exit or fail
+while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_docker.sh" | grep "$DOCKERCMD")" ]; do sleep 0.1; done
+
+# Restart all docker containers that stopped so that they are cleaned up for future benchmarks
+docker start $(docker ps -a | grep "$DOCKERCMD" | awk '{print $1}')     # need single quotes for print $1, so use grep

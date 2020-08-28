@@ -11,7 +11,7 @@ There are four primary categories of scripts:
 - [Benchmark scripts](#benchmark-scripts): scripts which stress test a system's ability to handle concurrent requests by repeatedly invoking the corresponding start script with a specified time step between each invocation.
 - [Result scripts](#result-scripts): two scripts (`get_avg_latency.py` and `get_avg_throughput.py`) which extract data from the output of the benchmarks.
 
-The results from the benchmarks we conducted can be found in the Results directory, and are shown in the [Results](#results) section at the bottom of this README. Provided are csv files with the latencies and throughputs at various time delays, as well as several line graphs and a bar graph as pngs. All tests were performed on a dual-socket Intel Xeon E5-2699 v3 @ 2.30GHz with a total of 72 logical cores and 377.7 GiB total memory and a network-mounted filesystem. The host OS was Ubuntu 16.04.6 LTS with Linux kernel 4.4.0, running Docker version 18.09.7, QEMU version 2.5.0, and rustc 1.47.0-nightly.
+The results from the benchmarks we conducted can be found in the Results directory, and are shown in the [Results](#results) section at the bottom of this README. Provided are csv files with the latencies and throughputs at various time delays, as well as several line graphs and a bar graph as pngs. All tests were performed on a dual-socket Intel Xeon E5-2699 v3 @ 2.30GHz with a total of 72 logical cores and 377.7 GiB total memory. The host OS was Ubuntu 16.04.6 LTS with Linux kernel 4.4.0, running Docker version 18.09.7, QEMU version 2.5.0, and rustc 1.47.0-nightly.
 
 ## Setup scripts
 
@@ -221,9 +221,9 @@ These scripts run performance benchmarks on their respective process formats by 
 1. Asynchronously begin a function which waits for a given warmup time, then writes `BEGIN BENCHMARK: ID ...` to the result file, then waits for the given test time, then writes `END BENCHMARK: ID ...` to the result file
 2. Begin a for loop which, for each iteration, calls the corresponding start function with the appropriate parameters in the background (terminated by `&`) and then waits for the duration of the given time step using `sleep`.
 
-For the official benchmarks, a warmup time of 120 seconds and a test time of 60 seconds were used. For each, trials are run beginning with a time step of 4 seconds, and that time step is halved until either the time step reaches 1/512 second or the benchmark becomes unresponsive on our test machine, which occurs at a time step of 0.5 for Linux running without KVM, for example.
+For the official benchmarks, a warmup time of 120 seconds and a test time of 60 seconds were used. For each, trials are run beginning with a time step of 4 seconds, and that time step is halved until either the time step reaches 1/1024 second or the benchmark becomes unresponsive on our test machine, which occurs at a time step of 0.5 for Linux running without KVM, for example.
 
-All tests were performed on a dual-socket Intel Xeon E5-2699 v3 @ 2.30GHz with a total of 72 logical cores and 377.7 GiB total memory and a network-mounted filesystem. The host OS was Ubuntu 16.04.6 LTS with Linux kernel 4.4.0, running Docker version 18.09.7, QEMU version 2.5.0, and rustc 1.47.0-nightly.
+All tests were performed on a dual-socket Intel Xeon E5-2699 v3 @ 2.30GHz with a total of 72 logical cores and 377.7 GiB total memory. The host OS was Ubuntu 16.04.6 LTS with Linux kernel 4.4.0, running Docker version 18.09.7, QEMU version 2.5.0, and rustc 1.47.0-nightly.
 
 Note that the overhead of using a loop in sh, initiating the backgrounded processes, and using the `sleep` command become increasingly significant as the time step approaches 1 millisecond (as the benchmarks do in the case of the Rust kernel and Linux process). Thus, changes in the time step are not directly proportional to the true time between subsequent spawns. However, since all benchmark scripts use the same methodology and time steps, the benchmarks allow for direct comparison between the performances of the various process formats, which is the primary goal of the experiment.
 
@@ -336,7 +336,7 @@ Shares the dependencies of `start_rust.sh`.
 
 This script runs the full suite of benchmarks which were used to generate the results included in the Results folder and discussed below.
 
-All tests were performed on a dual-socket Intel Xeon E5-2699 v3 @ 2.30GHz with a total of 72 logical cores and 377.7 GiB total memory and a network-mounted filesystem. The host OS was Ubuntu 16.04.6 LTS with Linux kernel 4.4.0, running Docker version 18.09.7, QEMU version 2.5.0, and rustc 1.47.0-nightly.
+All tests were performed on a dual-socket Intel Xeon E5-2699 v3 @ 2.30GHz with a total of 72 logical cores and 377.7 GiB total memory. The host OS was Ubuntu 16.04.6 LTS with Linux kernel 4.4.0, running Docker version 18.09.7, QEMU version 2.5.0, and rustc 1.47.0-nightly.
 
 The minimum time steps used in this script reflect the capabilities of the test system, and should be adjusted for use on other systems.
 
@@ -430,7 +430,7 @@ $ python3 get_avg_throughput.py FILE [FILE] [...]
 
 ## Results
 
-We executed `run_benchmarks.sh` and computed the latencies and throughputs from the output files using the scripts above. The raw data, as well as charts, can be found in the `Results` directory. Again, all tests were performed on a dual-socket Intel Xeon E5-2699 v3 @ 2.30GHz with a total of 72 logical cores and 377.7 GiB total memory and a network-mounted filesystem. The host OS was Ubuntu 16.04.6 LTS with Linux kernel 4.4.0, running Docker version 18.09.7, QEMU version 2.5.0, and rustc 1.47.0-nightly. The results are discussed below.
+We executed `run_benchmarks.sh` and computed the latencies and throughputs from the output files using the scripts above. The raw data, as well as charts, can be found in the `Results` directory. Again, all tests were performed on a dual-socket Intel Xeon E5-2699 v3 @ 2.30GHz with a total of 72 logical cores and 377.7 GiB total memory. The host OS was Ubuntu 16.04.6 LTS with Linux kernel 4.4.0, running Docker version 18.09.7, QEMU version 2.5.0, and rustc 1.47.0-nightly. The results are discussed below.
 
 ### Latency without contention
 
@@ -446,7 +446,7 @@ Next, the latencies of each system when under load are shown in the chart below.
 
 ![Latency vs time delay](Results/Latency_vs_Time_Delay.png)
 
-We once again see that the process outperforms all other systems, and that it has a minimal increase in latency as load increases. The Rust kernel is the only other system for which latency does not increase under load. Interestingly, though Docker begins with a latency lower than that of Linux with KVM, we see that latency spikes dramatically between the time delays of 0.5 and 0.25 seconds.Linux with KVM fares much better, yielding no noticable increase in latency until the time delay decreases below 0.125 seconds. Without KVM, Linux has a much higher latency, and with a time delay of 0.5, many of the VMs fail to properly initialize (due to contention for `udev`) and thus hang indefinitely. QEMU with KVM thus provides admirable benefits over QEMU alone. This makes it even more impressive that the Rust kernel, running on QEMU without KVM, is able to perform very well under a load much heavier (32x heavier) than Linux running with KVM.
+We once again see that the process outperforms all other systems, and that it has a minimal increase in latency as load increases. The Rust kernel is the only other system for which latency does not increase under load. Interestingly, though Docker begins with a latency lower than that of Linux with KVM, we see that latency spikes dramatically between the time delays of 0.5 and 0.25 seconds.Linux with KVM fares much better, yielding no noticable increase in latency until the time delay decreases below 0.125 seconds. Without KVM, Linux has a much higher latency, and with a time delay of 0.5, many of the VMs fail to properly initialize (due to contention for `udev`) and thus hang indefinitely. QEMU with KVM thus provides admirable benefits over QEMU alone. This makes it even more impressive that the Rust kernel, running on QEMU without KVM, is able to perform very well under a load much heavier (64x heavier) than Linux running with KVM.
 
 ### Throughput vs time delay
 
@@ -454,11 +454,11 @@ Lastly, the throughputs of each system under load are show in the chart below. O
 
 ![Throughput vs time delay](Results/Throughput_vs_Time_Delay.png)
 
-The throughputs align closely with the latencies above: when latency increases, we see a drop in throughput. Notably, however, when Docker and QEMU with KVM experience their first spikes in latency, the throughput at that same time delay continues to increase, albeit at a much lower rate. As the time delay increases, the latency of Docker continues to increase, and between time delays of 0.125 and 0.0625 seconds, resource contention causes the throughput of Docker to drop to near zero. In particular, Docker began to throw errors about `fork` being unavailable, since Docker had managed to fork 1546814 (`ulimit -u`) processes. This was not a problem with any other system, even when spawning instances at a rate 32x as high as Docker's breaking point.
+The throughputs align closely with the latencies above: when latency increases, we see a drop in throughput. Notably, however, when Docker and QEMU with KVM experience their first spikes in latency, the throughput at that same time delay continues to increase, albeit at a much lower rate. As the time delay increases, the latency of Docker continues to increase, and between time delays of 0.125 and 0.0625 seconds, resource contention causes the throughput of Docker to drop to near zero. In particular, Docker began to throw errors about `fork` being unavailable, since Docker had managed to fork 1546814 (`ulimit -u`) processes. This was not a problem with any other system, even when spawning instances at a rate 64x as high as Docker's breaking point.
 
 Linux without KVM, as before, had the lowest throughput of all. This is likely because both Docker and Linux without KVM run complex runtimes which themselves operate fully atop the host kernel, whereas KVM grants the Linux kernel direct hardware access, and processes are vastly more lightweight.
 
-Thus, the anomaly is again the Rust kernel which, despite running in standard QEMU without KVM, is still able to scale better under load than anything other than a process. Only when the time delay approaches the time required to initiate a process can we see the throughput the Rust kernel begin to fall below that of the process. No time delays below 0.001953125 seconds (1/512) were tested, since at that point the time delays become less significant compared to the overhead of spawning and backgrounding a new process from the shell. Thus, despite its higher base latency than a process, the throughput of the Rust kernel was able to scale with load as well as a process until the time delay approached 5 milliseconds, and after that, throughput continued to increase, albeit at a decreased rate.
+Thus, the anomaly is again the Rust kernel which, despite running in standard QEMU without KVM, is still able to scale better under load than anything other than a process. Only when the time delay approaches the time required to initiate a process can we see the throughput the Rust kernel begin to fall below that of the process. No time delays below 0.0009765625 seconds (1/1024) were tested, since at that point the time delays become less significant compared to the overhead of spawning and backgrounding a new process from the shell. Thus, despite its higher base latency than a process, the throughput of the Rust kernel was able to scale with load as well as a process until the time delay approached 5 milliseconds, and after that, throughput continued to increase, albeit at a decreased rate.
 
 ## Acknowledgements
 
