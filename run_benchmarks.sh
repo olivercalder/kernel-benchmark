@@ -1,5 +1,20 @@
 #!/bin/sh
 
+##### WARNING: HAVING DOCKER DAEMON RUNNING MAY CAUSE OTHER BENCHMARKS TO FAIL #####
+
+# Please start Docker after running this script, and then benchmark Docker
+# using `sh run_docker.sh`
+
+if [ -n "$(ps -aux | grep -v grep | grep docker)" ]; then
+    echo "WARNING: A process related to Docker is running."
+    printf "Are you sure you want to continue? [N/y] "
+    read $RESP
+    if [ "$RESP" != "y" ]; then
+        echo "Aborting."
+        exit 1
+    fi
+fi
+
 ID="$(date +%s)"
 OUTDIR=/tmp/Benchmark-"$ID"     # Use /tmp since it is usually on a non-network drive
 
@@ -55,23 +70,6 @@ run_rust 0.0078125
 run_rust 0.00390625
 run_rust 0.001953125
 run_rust 0.0009765625
-
-# Docker
-run_docker() {
-    echo "Benchmarking Docker with timestep of $1 trial 1"
-    sh benchmark_docker.sh -o "$OUTDIR"/docker-results-r"$1".txt -p "$OUTDIR"/docker-output-r"$1" -r "$1" -w 120 -t 60 -m 2> /dev/null
-    echo "Benchmarking Docker with timestep of $1 trial 2"
-    sh benchmark_docker.sh -o "$OUTDIR"/docker-results-r"$1".txt -p "$OUTDIR"/docker-output-r"$1" -r "$1" -w 120 -t 60 -m 2> /dev/null
-    echo "Benchmarking Docker with timestep of $1 trial 3"
-    sh benchmark_docker.sh -o "$OUTDIR"/docker-results-r"$1".txt -p "$OUTDIR"/docker-output-r"$1" -r "$1" -w 120 -t 60 -m 2> /dev/null
-}
-run_docker 4
-run_docker 2
-run_docker 1
-run_docker 0.5
-run_docker 0.25
-run_docker 0.125
-run_docker 0.0625
 
 # Process
 run_process() {

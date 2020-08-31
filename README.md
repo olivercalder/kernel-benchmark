@@ -13,6 +13,8 @@ There are four primary categories of scripts:
 
 The results from the benchmarks we conducted can be found in the Results directory, and are shown in the [Results](#results) section at the bottom of this README. Provided are csv files with the latencies and throughputs at various time delays, as well as several line graphs and a bar graph as pngs. All tests were performed on a dual-socket Intel Xeon E5-2699 v3 @ 2.30GHz with a total of 72 logical cores and 377.7 GiB total memory. The host OS was Ubuntu 16.04.6 LTS with Linux kernel 4.4.0, running Docker version 18.09.7, QEMU version 2.5.0, and rustc 1.47.0-nightly.
 
+_Note_: On the test machine, if the Docker service is running in the background, even while Docker benchmarks are not running, the other benchmarks were negatively impacted. Be sure to disable or kill all Docker services and daemons before running the other benchmarks.
+
 ## Setup scripts
 
 These scripts download and compile the Linux and Rust kernels, as well as allow the user to build or modify QEMU disk images. They must be run before running any of the start or benchmark scripts.
