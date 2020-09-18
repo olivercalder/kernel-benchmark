@@ -119,7 +119,7 @@ These scripts start an instance of their respective process formats, namely:
 - A Linux process running directly on the host
 - A minimal Rust unikernel running in QEMU
 
-### `start_docker.sh
+### `start_docker.sh`
 
 Starts a Docker container running the specified command. If no command is specified, runs `docker run hello-world` by default.
 
