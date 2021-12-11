@@ -6,10 +6,13 @@ OPTIONS:
     -h                      display help
     -b <resultfile>         benchmark mode: write timestamp ID to the given file once qemu exits
     -d                      debug mode: preserve qemu display
-    -i <path/to/binary>     boot from the given Rust kernel binary
-                            (default is rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin)
+    -i <path/to/image>      original image file path
+    -m <memory>             run qemu with the given memory amount as maximum (default 128M)
     -o <outfilename>        write start and end timestamps as well as any serial output to the given output file
     -p <outdir>             write output file to the given directory
+    -r <path/to/binary>     boot from the given Rust kernel binary
+                            (default is rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin)
+    -t <path/to/thumbnail>  write thumbnail to the given file path
 " 1>&2; exit 1; }
 
 BENCHFILE=
@@ -17,9 +20,11 @@ BIN="rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin"
 OUTFILE=
 OUTDIR=
 NODISP="-display none"
-NOPIPE=
+MEMORY=
+IMAGE=
+THUMBNAIL=
 
-while getopts ":hb:di:o:p:" OPT; do
+while getopts ":hb:di:m:o:p:r:t:" OPT; do
     case "$OPT" in
         h)
             usage
@@ -29,16 +34,24 @@ while getopts ":hb:di:o:p:" OPT; do
             ;;
         d)
             NODISP=
-            NOPIPE="1"
             ;;
         i)
-            BIN="$OPTARG"
+            IMAGE="$OPTARG"
+            ;;
+        m)
+            MEMORY="-m $OPTARG"
             ;;
         o)
             OUTFILE="$OPTARG"
             ;;
         p)
             OUTDIR="$OPTARG"
+            ;;
+        r)
+            BIN="$OPTARG"
+            ;;
+        t)
+            THUMBNAIL="$OPTARG"
             ;;
         *)
             usage
@@ -49,94 +62,58 @@ done
 shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
 [ -f "$BIN" ] || { echo "ERROR: binary does not exist: $BIN"; exit 1; }
+[ -n "$IMAGE" ] || { echo "ERROR: missing required argument: -i <path/to/image>"; usage; }
+[ -f "$IMAGE" ] || { echo "ERROR: image file does not exist: $IMAGE"; exit 1; }
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
 NAME="qemu-rust-$TS"
 
 [ -n "$OUTFILE" ] || OUTFILE="$NAME.output"
+[ -n "$THUMBNAIL" ] || THUMBNAIL="$NAME.png"
 [ -n "$OUTDIR" ] && mkdir -p "$OUTDIR" || OUTDIR="."
 OUTFILE="$OUTDIR/$OUTFILE"
+THUMBNAIL="$OUTDIR/$THUMBNAIL"
 
-if [ -n "$NOPIPE" ]; then
-    NAMEDPIPE="/dev/null"
-    PIPE=
-else
-    NAMEDPIPE="/tmp/$NAME"
-    mkfifo "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # create I/O pipes
-    PIPE="-serial pipe:$NAMEDPIPE"
-fi
-
-# kill the sleeping task from build_rust.sh if a previous compile happened to fail
-kill "$(ps -aux |  awk '/waittokillqemu/ {print $2}')" 2> /dev/null
+NAMEDPIPE="/tmp/$NAME"
+mkfifo "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # create I/O pipes
+PIPE="-serial pipe:$NAMEDPIPE"
 
 
 ##### DEFINE FUNCTIONS FOR I/O #####
 
 
-# print the given command to the input buffer, terminated by a newline character
-do_now() {
-    CMD=$1
-    echo "now doing $CMD"
-    printf "%s\n" "$CMD" > "$NAMEDPIPE.in"
+send_image () {
+    echo "begin" > "$NAMEDPIPE.in"
+    # send a few bytes to trigger serial interrupts
+    # if qemu is not finished booting, at least one of these will need to be
+    # consumed by the kernel, which ensures the kernel reads all the png data
+    cat "$1" > "$NAMEDPIPE.in"
 }
 
-# wait until any of the given strings appear in the output buffer, then return
-wait_for() {
-    BREAK=
-    while read -r line; do
-        for STR in "$@"; do
-            case "$line" in
-                *$STR*)
-                    BREAK=1
-                    break
-            esac
-        done
-        [ -n "$BREAK" ] && break
-    done < "$NAMEDPIPE.out"
-}
-
-# write from the output buffer to the given file until any of the given strings appear
-# does not write the final line containing the found string
-write_until() {
-    OUTFILE=$1
-    BREAK=      # initialize empty BREAK variable
-    shift       # shift arg index by 1
-    while read -r outline; do
-        for STR in "$@"; do   # if no further arguments, read indefinitely
-            case "$outline" in
-                *$STR*)
-                    BREAK=1
-                    break
-            esac
-        done
-        [ -n "$BREAK" ] && break    # break if the BREAK variable has been set
-        echo "$outline " | sed 's/.*//g' >> $OUTFILE
-    done < "$NAMEDPIPE.out"
+receive_image () {
+    cat "$NAMEDPIPE.out" > "$1"
 }
 
 
-##### BEGIN RUNNING QEMU IN THE BACKGROUND #####
+##### SEND AND RECEIVE DATA FROM SERIAL PORT #####
 
 
-echo "$(date +%s%N) QEMU initiated" >> "$OUTFILE" && qemu-system-x86_64 \
+send_image "$IMAGE" &
+receive_image "$THUMBNAIL" &
+
+
+##### BEGIN RUNNING QEMU #####
+
+
+time -o "$OUTFILE" qemu-system-x86_64 \
     -drive format=raw,file=rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin \
     -snapshot \
     -no-reboot \
     -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
     $PIPE \
-    $NODISP \
-    && { echo "$(date +%s%N) QEMU exited successfully" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; true; } \
-    || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; true; } \
-    &
-
+    $MEMORY \
+    $NODISP
 # 0xf4 is used to communicate exit codes to qemu
+[ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"
 
-
-##### RECORD OUTPUT FROM SERIAL CONSOLE UNTIL THE PIPE CLOSES #####
-
-
-if [ -z "$NOPIPE" ]; then
-    write_until "$OUTFILE"
-
-    rm "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # remove pipes
-fi
+rm "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # remove pipes
