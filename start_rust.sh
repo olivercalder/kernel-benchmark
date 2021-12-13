@@ -6,12 +6,12 @@ OPTIONS:
     -h                      display help
     -b <resultfile>         benchmark mode: write timestamp ID to the given file once qemu exits
     -d                      debug mode: preserve qemu display
+    -e <path/to/binary>     boot from the given Rust kernel binary
+                            (default is rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin)
     -i <path/to/image>      original image file path
     -m <memory>             run qemu with the given memory amount as maximum (default 128M)
     -o <outfilename>        write start and end timestamps as well as any serial output to the given output file
     -p <outdir>             write output file to the given directory
-    -r <path/to/binary>     boot from the given Rust kernel binary
-                            (default is rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin)
     -t <path/to/thumbnail>  write thumbnail to the given file path
 " 1>&2; exit 1; }
 
@@ -24,13 +24,16 @@ MEMORY=
 IMAGE=
 THUMBNAIL=
 
-while getopts ":hb:di:m:o:p:r:t:" OPT; do
+while getopts ":hb:de:i:m:o:p:t:" OPT; do
     case "$OPT" in
         h)
             usage
             ;;
         b)
             BENCHFILE="$OPTARG"
+            ;;
+        e)
+            BIN="$OPTARG"
             ;;
         d)
             NODISP=
@@ -47,9 +50,6 @@ while getopts ":hb:di:m:o:p:r:t:" OPT; do
         p)
             OUTDIR="$OPTARG"
             ;;
-        r)
-            BIN="$OPTARG"
-            ;;
         t)
             THUMBNAIL="$OPTARG"
             ;;
@@ -59,7 +59,7 @@ while getopts ":hb:di:m:o:p:r:t:" OPT; do
     esac
 done
 
-shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
+shift $((OPTIND - 1))  # isolate remaining args
 
 [ -f "$BIN" ] || { echo "ERROR: binary does not exist: $BIN"; exit 1; }
 [ -n "$IMAGE" ] || { echo "ERROR: missing required argument: -i <path/to/image>"; usage; }
@@ -105,7 +105,7 @@ receive_image "$THUMBNAIL" &
 ##### BEGIN RUNNING QEMU #####
 
 
-time -o "$OUTFILE" qemu-system-x86_64 \
+time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
     -drive format=raw,file=rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin \
     -snapshot \
     -no-reboot \

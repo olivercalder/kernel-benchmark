@@ -5,13 +5,13 @@ usage() { echo "USAGE: sh $0 [OPTIONS]
 OPTIONS:
     -h                      display help
     -d                      debug mode: preserve qemu display (pass -d to start_rust.sh)
+    -e <path/to/binary>     boot from the given Rust kernel binary
+                            (default is rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin)
     -f <frequency>          set the timestep between calls to spawn new VMs in seconds -- default 10
     -i <path/to/image>      original image file path
     -m <memory>             run qemu with the given memory amount as maximum (default 128)
     -o <resultfilename>     write timestamp IDs to the given file once qemu exits
     -p <outputdir>          write individual qemu outputs to the given directory
-    -r <path/to/binary>     boot from the given Rust kernel binary
-                            (default is rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin)
     -t <duration>           set the duration of the benchmark in seconds -- default 60
     -w <duration>           set the duration of the warmup time prior to the benchmark -- default 60
 " 1>&2; exit 1; }
@@ -26,10 +26,13 @@ WARMTIME="60"
 MEMORY=
 IMAGE=
 
-while getopts ":hdf:i:m:o:p:r:t:w:" OPT; do
+while getopts ":hde:f:i:m:o:p:t:w:" OPT; do
     case "$OPT" in
         h)
             usage
+            ;;
+        e)
+            BIN="$OPTARG"
             ;;
         d)
             DEBUG="-d"
@@ -48,9 +51,6 @@ while getopts ":hdf:i:m:o:p:r:t:w:" OPT; do
             ;;
         p)
             OUTDIR="$OPTARG"
-            ;;
-        r)
-            BIN="$OPTARG"
             ;;
         t)
             TESTTIME="$OPTARG"
