@@ -11,7 +11,7 @@ OPTIONS:
 " 1>&2; exit 1; }
 
 BENCHFILE=
-DOCKERCMD="docker run hello-world"
+DOCKERCMD="docker run --rm hello-world"
 OUTFILE=
 OUTDIR=
 
