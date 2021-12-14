@@ -1,6 +1,6 @@
 #!/bin/bash
 
-command -v capstan
+command -v capstan > /dev/null
 if [ $? -ne 0 ]; then
     # script from https://raw.githubusercontent.com/cloudius-systems/capstan/master/scripts/download
     set -e
@@ -25,6 +25,21 @@ if [ $? -ne 0 ]; then
 
     echo "Downloading Capstan binary: $URL"
 
-    curl -# -L $URL > $DIR/capstan
+    curl -# -L -o $DIR/capstan $URL
+
     chmod u+x $DIR/capstan
+fi
+
+command -v build-capstan-base-image > /dev/null
+if [ $? -ne 0 ]; then
+    URL="https://github.com/cloudius-systems/osv/blob/master/scripts/build-capstan-base-image"
+    DIR="$HOME/.local/bin"
+
+    mkdir -p $DIR
+
+    echo "Downloading Capstan image builder: $URL"
+
+    curl -# -L -o $DIR/build-capstan-base-image $URL
+
+    chmod u+x $DIR/build-capstan-base-image
 fi
