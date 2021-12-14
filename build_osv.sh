@@ -29,17 +29,3 @@ if [ $? -ne 0 ]; then
 
     chmod u+x $DIR/capstan
 fi
-
-command -v build-capstan-base-image > /dev/null
-if [ $? -ne 0 ]; then
-    URL="https://github.com/cloudius-systems/osv/blob/master/scripts/build-capstan-base-image"
-    DIR="$HOME/.local/bin"
-
-    mkdir -p $DIR
-
-    echo "Downloading Capstan image builder: $URL"
-
-    curl -# -L -o $DIR/build-capstan-base-image $URL
-
-    chmod u+x $DIR/build-capstan-base-image
-fi
