@@ -71,9 +71,10 @@ shift $((OPTIND - 1))   # isolate remaining args
 [ -f "$IMAGE" ] || { echo "ERROR: image file does not exist: $IMAGE"; exit 1; }
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
+NAME="benchmark-rust-$TS"
 
-[ -n "$BENCHFILE" ] || BENCHFILE="benchmark-rust-$TS-results.txt"
-[ -n "$OUTDIR" ] || OUTDIR="benchmark-rust-$TS-output"
+[ -n "$BENCHFILE" ] || BENCHFILE="$NAME-results.txt"
+[ -n "$OUTDIR" ] || OUTDIR="$NAME-output"
 
 TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$FREQUENCY*1.1))")
 echo "Warmup time: $WARMTIME"

@@ -77,9 +77,10 @@ shift $((OPTIND - 1))  # isolate remaining args
 [ -n "$HEIGHT" ] || HEIGHT="$WIDTH"
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
+NAME="benchmark-process-$TS"
 
-[ -n "$BENCHFILE" ] || BENCHFILE="benchmark-process-$TS-results.txt"
-[ -n "$OUTDIR" ] || OUTDIR="benchmark-process-$TS-output"
+[ -n "$BENCHFILE" ] || BENCHFILE="$NAME-results.txt"
+[ -n "$OUTDIR" ] || OUTDIR="$NAME-output"
 
 TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$FREQUENCY*1.1))")
 echo "Warmup time: $WARMTIME"
