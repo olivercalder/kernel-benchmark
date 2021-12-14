@@ -116,7 +116,4 @@ printf "\n"
 while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_docker.sh" | grep "$DOCKERIMG")" ]; do sleep 0.1; done
 
 # Remove all docker containers that stopped from this benchmark so that they are cleaned up for future benchmarks
-docker rm "$(docker ps -a | grep "$NAME" | awk '{print $1}')"   # need single quotes for print $1, so use grep
-
-# Use `docker system prune` to clean up old containers and images
-true
+docker system prune -f
