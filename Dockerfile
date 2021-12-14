@@ -1,4 +1,4 @@
-FROM rust:latest as builder
+FROM docker.io/rust:latest as builder
 WORKDIR /usr/src/rusty-nail
 COPY rusty-nail .
 RUN cargo install --path .
