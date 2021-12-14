@@ -27,7 +27,7 @@ WIDTH=150
 HEIGHT=
 CROP=
 
-while getopts ":hb:e:i:o:p:t:q:x:y:c" OPT; do
+while getopts ":hb:e:i:o:p:t:w:x:y:c" OPT; do
     case "$OPT" in
         h)
             usage
@@ -63,6 +63,7 @@ while getopts ":hb:e:i:o:p:t:q:x:y:c" OPT; do
             CROP="true"
             ;;
         *)
+            echo "ERROR: unknown option: $OPT"
             usage
             ;;
     esac

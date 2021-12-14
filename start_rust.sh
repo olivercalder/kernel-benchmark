@@ -54,6 +54,7 @@ while getopts ":hb:de:i:m:o:p:t:" OPT; do
             THUMBNAIL="$OPTARG"
             ;;
         *)
+            echo "ERROR: unknown option: $OPT"
             usage
             ;;
     esac

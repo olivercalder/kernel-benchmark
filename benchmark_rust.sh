@@ -59,6 +59,7 @@ while getopts ":hde:f:i:m:o:p:t:w:" OPT; do
             WARMTIME="$OPTARG"
             ;;
         *)
+            echo "ERROR: unknown option: $OPT"
             usage
             ;;
     esac

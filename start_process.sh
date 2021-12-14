@@ -58,6 +58,7 @@ while getopts ":hb:e:i:o:p:t:x:y:c" OPT; do
             CROP="true"
             ;;
         *)
+            echo "ERROR: unknown option: $OPT"
             usage
             ;;
     esac
