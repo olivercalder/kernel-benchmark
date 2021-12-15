@@ -1,31 +1,42 @@
-#!/bin/bash
+#!/bin/sh
 
-command -v capstan > /dev/null
-if [ $? -ne 0 ]; then
-    # script from https://raw.githubusercontent.com/cloudius-systems/capstan/master/scripts/download
-    set -e
+CWD="$(pwd)"
 
-    case "$OSTYPE" in
-    darwin*)  NAME="darwin_capstan" ;;
-    linux*)   NAME="capstan"  ;;
-    freebsd*) NAME="capstan";;
-    *)        echo "Your operating system ('$OSTYPE') is not supported by Capstan. Exiting." && exit 1 ;;
-    esac
+[ -d "osv" ] || git clone https://github.com/cloudius-systems/osv.git
+cd osv
 
-    case "$HOSTTYPE" in
-    x86_64*)  ARCH="amd64" ;;
-    amd64*)   ARCH="amd64" ;;
-    *)        echo "OSv only supports 64-bit x86. Exiting." && exit 1 ;;
-    esac
+sed -i 's/-nostartfiles//g' Makefile
+sed -i 's/-nodefaultlibs//g' Makefile
 
-    URL="https://github.com/cloudius-systems/capstan/releases/latest/download/${NAME}"
-    DIR="$HOME/.local/bin"
+git submodule update --init --recursive
+cd apps
 
-    mkdir -p $DIR
+[ -d "rusty-nail" ] || git clone https://github.com/olivercalder/rusty-nail.git
+cd rusty-nail
 
-    echo "Downloading Capstan binary: $URL"
+cat > Makefile <<EOF
+.PHONY: module
+module: target/release/rusty-nail
+	echo '/rusty-nail: \$\${MODULE_DIR}/target/release/rusty-nail' > usr.manifest
 
-    curl -# -L -o $DIR/capstan $URL
+target/release/rusty-nail: src/main.rs src/png.rs
+	cargo --version && cargo build --release || echo "Please install Rust"
 
-    chmod u+x $DIR/capstan
-fi
+clean:
+	-cargo clean
+	rm -f usr.manifest
+EOF
+
+cat > module.py <<EOF
+from osv.modules import api
+
+default = api.run(cmdline="/rusty-nail")
+EOF
+
+grep 'rustc_version_runtime' Cargo.toml || echo 'rustc_version_runtime = "0.1.*"' >> Cargo.toml
+
+cd "${CWD}/osv"
+
+./scripts/build image=rusty-nail
+
+cd "$CWD"
