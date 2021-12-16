@@ -40,3 +40,24 @@ cd "${CWD}/osv"
 ./scripts/build image=rusty-nail
 
 cd "$CWD"
+
+command -v virtiofsd > /dev/null
+if [ $? -ne 0 ]; then
+    # Ofted, virtiofsd
+    mkdir -p "$HOME/.local/bin"
+    if [ -f "/usr/libexec/virtiofsd" ]; then    # location on Fedora
+        ln -s "/usr/libexec/virtiofsd" "$HOME/.local/bin/"
+    elif [ -f "/usr/lib/qemu/virtiofsd" ]; then # location on Ubuntu
+        ln -s "/usr/lib/qemu/virtiofsd" "$HOME/.local/bin/"
+    fi
+    # Add $HOME/.local/bin to path if it is not yet in the path
+    case ":${PATH}:" in
+        *:"${HOME}/.local/bin":*)
+            ;;
+        *)
+            export PATH="${HOME}/.local/bin:${PATH}"
+            ;;
+    esac
+    # If osv/scripts/run.py is run in a different terminal, may need to export
+    # path to include $HOME/.local/bin again manually
+fi
