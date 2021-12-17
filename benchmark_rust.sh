@@ -9,7 +9,7 @@ OPTIONS:
                             (default is rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin)
     -f <frequency>          set the timestep between calls to spawn new VMs in seconds -- default 10
     -i <path/to/image>      original image file path
-    -m <memory>             run qemu with the given memory amount as maximum (default 128)
+    -m <memory>             run qemu with the given memory amount as maximum (default 128M)
     -o <resultfilename>     write timestamp IDs to the given file once qemu exits
     -p <outputdir>          write individual qemu outputs to the given directory
     -t <duration>           set the duration of the benchmark in seconds -- default 60
@@ -23,7 +23,7 @@ OUTDIR=
 FREQUENCY="10"
 TESTTIME="60"
 WARMTIME="60"
-MEMORY=
+MEMORY="128M"
 IMAGE=
 
 while getopts ":hde:f:i:m:o:p:t:w:" OPT; do
@@ -44,7 +44,7 @@ while getopts ":hde:f:i:m:o:p:t:w:" OPT; do
             IMAGE="$OPTARG"
             ;;
         m)
-            MEMORY="-m $OPTARG"
+            MEMORY="$OPTARG"
             ;;
         o)
             BENCHFILE="$OPTARG"
@@ -94,7 +94,7 @@ write_begin_end &
 
 i=1
 while [ "$i" -le "$TOTAL" ]; do
-    sh start_rust.sh -b "$BENCHFILE" $DEBUG -i "$IMAGE" $MEMORY -p "$OUTDIR" -r "$BIN" &
+    sh start_rust.sh -b "$BENCHFILE" $DEBUG -i "$IMAGE" -m "$MEMORY" -p "$OUTDIR" -r "$BIN" &
     printf "\rSpawned VM %s" "$i"
     sleep "$FREQUENCY"
     i=$((i + 1))
