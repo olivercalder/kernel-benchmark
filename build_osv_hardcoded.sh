@@ -7,6 +7,7 @@ cd osv
 
 sed -i 's/-nostartfiles//g' Makefile
 sed -i 's/-nodefaultlibs//g' Makefile
+sed -i '1930s/\/usr//' Makefile
 
 git submodule update --init --recursive
 cd apps
