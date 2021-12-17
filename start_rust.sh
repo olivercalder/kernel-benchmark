@@ -107,7 +107,7 @@ receive_image "$THUMBNAIL" &
 
 
 time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
-    -drive format=raw,file=rust-kernel/test_os/target/x86_64-test_os/release/bootimage-test_os.bin \
+    -drive format=raw,file="$BIN" \
     -snapshot \
     -no-reboot \
     -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
