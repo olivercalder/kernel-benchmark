@@ -60,7 +60,7 @@ while getopts ":hb:e:i:o:p:t:w:x:y:c" OPT; do
             HEIGHT="$OPTARG"
             ;;
         c)
-            CROP="true"
+            CROP="-c"
             ;;
         *)
             echo "ERROR: unknown option: $OPT"
@@ -100,7 +100,7 @@ cd "$CWD"
 echo "$(date +%s%N) Docker initiated" >> "$OUTFILE"
 time -o "$OUTFILE" --append --portability docker run --rm --user "$(id -u)":"$(id -g)" \
     -v "$WORKDIR":/images -w /images \
-    "$DOCKERIMG" "rusty-nail" "$ORIG" "$THUMBNAIL" "$WIDTH" "$HEIGHT" $CROP >> "$OUTFILE"
+    "$DOCKERIMG" "rusty-nail" -i "$ORIG" -t "$THUMBNAIL" -x "$WIDTH" -y "$HEIGHT" $CROP >> "$OUTFILE"
 ECODE=$?
 END_TS="$(date +%s%N)"
 if [ $ECODE -eq 0 ]; then

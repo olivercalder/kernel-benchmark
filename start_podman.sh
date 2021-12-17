@@ -60,7 +60,7 @@ while getopts ":hb:e:i:o:p:t:w:x:y:c" OPT; do
             HEIGHT="$OPTARG"
             ;;
         c)
-            CROP="true"
+            CROP="-c"
             ;;
         *)
             echo "ERROR: unknown option: $OPT"
@@ -103,7 +103,7 @@ echo "$(date +%s%N) Podman initiated" >> "$OUTFILE"
 # This works on Debian-based systems. On RHEL-based systems, workarounds are necessary.
 time -o "$OUTFILE" --append --portability podman run --rm \
     -v "$WORKDIR":/images -w /images \
-    "$PODMANIMG" "rusty-nail" "$ORIG" "$THUMBNAIL" "$WIDTH" "$HEIGHT" $CROP >> "$OUTFILE"
+    "$PODMANIMG" "rusty-nail" -i "$ORIG" -t "$THUMBNAIL" -x "$WIDTH" -y "$HEIGHT" $CROP >> "$OUTFILE"
 ECODE=$?
 END_TS="$(date +%s%N)"
 if [ $ECODE -eq 0 ]; then

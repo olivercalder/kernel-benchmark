@@ -55,7 +55,7 @@ while getopts ":hb:e:i:o:p:t:x:y:c" OPT; do
             HEIGHT="$OPTARG"
             ;;
         c)
-            CROP="true"
+            CROP="-c"
             ;;
         *)
             echo "ERROR: unknown option: $OPT"
@@ -86,7 +86,7 @@ THUMBNAIL="$OUTDIR/$THUMBNAIL"
 
 
 echo "$(date +%s%N) Process initiated" >> "$OUTFILE"
-time -o "$OUTFILE" --append --portability "$BIN" "$IMAGE" "$THUMBNAIL" "$WIDTH" "$HEIGHT" $CROP >> "$OUTFILE"
+time -o "$OUTFILE" --append --portability "$BIN" -i "$IMAGE" -t "$THUMBNAIL" -x "$WIDTH" -y "$HEIGHT" $CROP >> "$OUTFILE"
 ECODE=$?
 END_TS="$(date +%s%N)"
 if [ $ECODE -eq 0 ]; then
