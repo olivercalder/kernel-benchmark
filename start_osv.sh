@@ -6,6 +6,7 @@ OPTIONS:
     -h                      display help
     -a <port>               use the given port to send data using TCP -- can't be used with -w
     -b <resultfile>         benchmark mode: write timestamp ID to the given file once the process exits
+    -d                      debug mode: preserve qemu display
     -e <path/to/osv/image>  execute the given osv image -- default: \$(pwd)/osv/build/last/usr.img
     -i <path/to/image>      original image file path
     -m <memory>             run qemu with the given memory amount as maximum (default 2G)
@@ -26,6 +27,7 @@ BENCHFILE=
 BIN="${CWD}/osv/build/last/usr.img"
 OUTFILE=
 OUTDIR=
+NODISP="-display none"
 MEMORY="2G"
 IMAGE=
 THUMBNAIL=
@@ -35,7 +37,7 @@ WIDTH=150
 HEIGHT=
 CROP=
 
-while getopts ":ha:b:e:i:m:o:p:t:w:x:y:c" OPT; do
+while getopts ":ha:b:de:i:m:o:p:t:w:x:y:c" OPT; do
     case "$OPT" in
         h)
             usage
@@ -45,6 +47,9 @@ while getopts ":ha:b:e:i:m:o:p:t:w:x:y:c" OPT; do
             ;;
         b)
             BENCHFILE="$OPTARG"
+            ;;
+        d)
+            NODISP=
             ;;
         e)
             BIN="$OPTARG"
@@ -109,7 +114,7 @@ run_osv_with_tcp () {
     time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
     -m "$MEMORY" \
     -smp 4 \
-    -display none \
+    $NODISP \
     -device virtio-blk-pci,id=blk0,drive=hd0,scsi=off,bootindex=0 \
     -drive file=$BIN,if=none,id=hd0,cache=none,aio=native \
     -netdev user,id=mynet,hostfwd=tcp::$PORT-:12345 \
@@ -187,7 +192,7 @@ else
     time -o "$OUTFILE" --append --portability sudo qemu-system-x86_64 \
     -m "$MEMORY" \
     -smp 4 \
-    --display none \
+    $NODISP \
     -device virtio-blk-pci,id=blk0,drive=hd0,scsi=off,bootindex=0 \
     -drive file=$BIN,if=none,id=hd0,cache=none,aio=native \
     -chardev socket,id=char0,path=/tmp/vhostqemu-$NAME \
