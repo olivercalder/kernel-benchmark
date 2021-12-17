@@ -4,6 +4,7 @@ usage() { echo "USAGE: sh $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
+    -a <port>               use the given port to send data using TCP -- can't be used with -w
     -b <resultfile>         benchmark mode: write timestamp ID to the given file once the process exits
     -e <path/to/osv/image>  execute the given osv image -- default: \$(pwd)/osv/build/last/usr.img
     -i <path/to/image>      original image file path
@@ -11,11 +12,10 @@ OPTIONS:
     -o <outfilename>        write start and end timestamps and the output of all commands to the given file
     -p <outdir>             write output file to the given directory
     -t <path/to/thumbnail>  write thumbnail to the given file path
-    -u <port>               use the given port to send data using TCP -- can't be used with -w
     -w </path/to/work/dir>  mount this directory to OSv -- thumbnail will be written here
-                            - can't be used with -u
-                            - if neither -u or -w are given, -w defaults to a unique name
-                            - DO NOT USE (broken for now) -- use -u <port> instead
+                            - can't be used with -a
+                            - if neither -a or -w are given, -w defaults to a unique name
+                            - DO NOT USE (broken for now) -- use -a <port> instead
     -x <width>              width of thumbnail -- defaults to 150
     -y <height>             height of thumbnail -- defaults to match width
     -c                      crop the image to exactly fill the given thumbnail dimensions
@@ -35,10 +35,13 @@ WIDTH=150
 HEIGHT=
 CROP=
 
-while getopts ":hb:e:i:m:o:p:t:u:w:x:y:c" OPT; do
+while getopts ":ha:b:e:i:m:o:p:t:w:x:y:c" OPT; do
     case "$OPT" in
         h)
             usage
+            ;;
+        a)
+            PORT="$OPTARG"
             ;;
         b)
             BENCHFILE="$OPTARG"
@@ -61,9 +64,6 @@ while getopts ":hb:e:i:m:o:p:t:u:w:x:y:c" OPT; do
         t)
             THUMBNAIL="$OPTARG"
             ;;
-        u)
-            PORT="$OPTARG"
-            ;;
         w)
             WORKDIR="$OPTARG"
             ;;
@@ -77,7 +77,7 @@ while getopts ":hb:e:i:m:o:p:t:u:w:x:y:c" OPT; do
             CROP="-c"
             ;;
         *)
-            echo "ERROR: unknown option: $OPT"
+            echo "ERROR: unknown option"
             usage
             ;;
     esac
@@ -105,33 +105,17 @@ BIN="/tmp/${NAME}.img"
 run_osv_with_tcp () {
     "${CWD}/osv/scripts/imgedit.py" setargs "$BIN" "rusty-nail -a 10.0.2.15:12345 -x $WIDTH -y $HEIGHT $CROP"
     # 10.0.2.15 is default IP where the hostfwd option sends packets over the forwarded ports
-    echo "Modified $BIN"
-    echo "Waiting for image on port $PORT"
     echo "$(date +%s%N) OSv initiated" >> "$OUTFILE"
     time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
     -m "$MEMORY" \
     -smp 4 \
+    -display none \
     -device virtio-blk-pci,id=blk0,drive=hd0,scsi=off,bootindex=0 \
     -drive file=$BIN,if=none,id=hd0,cache=none,aio=native \
     -netdev user,id=mynet,hostfwd=tcp::$PORT-:12345 \
     -device virtio-net-pci,netdev=mynet \
-    -enable-kvm \
+    --enable-kvm \
     -cpu host,+x2apic
-    #-device e1000,netdev=un0 \
-    #-netdev user,id=un0,hostfwd=tcp::$PORT-:12345 \
-    #
-    #-nic user,hostfwd=tcp::$PORT-:12345 \
-    #
-    #-netdev user,id=mynet,hostfwd=tcp::$PORT-:12345 \
-    #-device virtio-net-pci,netdev=mynet \
-    #
-    #-netdev user,id=un0,net=192.168.122.0/24,host=192.168.122.1 \
-    #-device virtio-net-pci,netdev=un0 \
-    #-device virtio-rng-pci \
-    #--nographic \
-    #-chardev stdio,mux=on,id=stdio,signal=off \
-    #-mon chardev=stdio,mode=readline \
-    #-device isa-serial,chardev=stdio
     ECODE=$?
     END_TS="$(date +%s%N)"
     if [ $ECODE -eq 0 ]; then
@@ -203,7 +187,6 @@ else
     time -o "$OUTFILE" --append --portability sudo qemu-system-x86_64 \
     -m "$MEMORY" \
     -smp 4 \
-    #--nographic \
     --display none \
     -device virtio-blk-pci,id=blk0,drive=hd0,scsi=off,bootindex=0 \
     -drive file=$BIN,if=none,id=hd0,cache=none,aio=native \
@@ -211,14 +194,8 @@ else
     -device vhost-user-fs-pci,queue-size=1024,chardev=char0,tag=myfs \
     -object memory-backend-file,id=mem,size="$MEMORY",mem-path=/dev/shm,share=on \
     -numa node,memdev=mem \
-    -netdev user,id=un0,net=192.168.122.0/24,host=192.168.122.1 \
-    -device virtio-net-pci,netdev=un0 \
-    -device virtio-rng-pci \
-    -enable-kvm \
+    --enable-kvm \
     -cpu host,+x2apic
-    #-chardev stdio,mux=on,id=stdio,signal=off \
-    #-mon chardev=stdio,mode=readline \
-    #-device isa-serial,chardev=stdio
     ECODE=$?
     END_TS="$(date +%s%N)"
     if [ $ECODE -eq 0 ]; then
