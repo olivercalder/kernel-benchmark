@@ -105,8 +105,7 @@ receive_image "$THUMBNAIL" &
 
 ##### BEGIN RUNNING QEMU #####
 
-
-time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
+/usr/bin/time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
     -drive format=raw,file="$BIN" \
     -snapshot \
     -no-reboot \

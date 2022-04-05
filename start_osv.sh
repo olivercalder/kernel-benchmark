@@ -111,7 +111,7 @@ run_osv_with_tcp () {
     "${CWD}/osv/scripts/imgedit.py" setargs "$BIN" "rusty-nail -a 10.0.2.15:12345 -x $WIDTH -y $HEIGHT $CROP"
     # 10.0.2.15 is default IP where the hostfwd option sends packets over the forwarded ports
     echo "$(date +%s%N) OSv initiated" >> "$OUTFILE"
-    time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
+    /usr/bin/time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
     -m "$MEMORY" \
     -smp 4 \
     $NODISP \
@@ -189,7 +189,7 @@ else
     --socket-path=/tmp/vhostqemu-$NAME \
     -o source="$WORKDIR" &
     echo "$(date +%s%N) OSv initiated" >> "$OUTFILE"
-    time -o "$OUTFILE" --append --portability sudo qemu-system-x86_64 \
+    /usr/bin/time -o "$OUTFILE" --append --portability sudo qemu-system-x86_64 \
     -m "$MEMORY" \
     -smp 4 \
     $NODISP \

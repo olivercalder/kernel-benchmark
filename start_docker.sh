@@ -98,7 +98,7 @@ cd "$CWD"
 
 
 echo "$(date +%s%N) Docker initiated" >> "$OUTFILE"
-time -o "$OUTFILE" --append --portability docker run --rm --user "$(id -u)":"$(id -g)" \
+/usr/bin/time -o "$OUTFILE" --append --portability docker run --rm --user "$(id -u)":"$(id -g)" \
     -v "$WORKDIR":/images -w /images \
     "$DOCKERIMG" "rusty-nail" -i "$ORIG" -t "$THUMBNAIL" -x "$WIDTH" -y "$HEIGHT" $CROP >> "$OUTFILE"
 ECODE=$?

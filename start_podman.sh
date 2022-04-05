@@ -101,7 +101,7 @@ echo "$(date +%s%N) Podman initiated" >> "$OUTFILE"
 # Don't run podman as user, since permission problems arise as volumes are
 # mounted as root in the container, and workarounds are messy and slow
 # This works on Debian-based systems. On RHEL-based systems, workarounds are necessary.
-time -o "$OUTFILE" --append --portability podman run --rm \
+/usr/bin/time -o "$OUTFILE" --append --portability podman run --rm \
     -v "$WORKDIR":/images -w /images \
     "$PODMANIMG" "rusty-nail" -i "$ORIG" -t "$THUMBNAIL" -x "$WIDTH" -y "$HEIGHT" $CROP >> "$OUTFILE"
 ECODE=$?

@@ -18,27 +18,27 @@ fi
 ID="$(date +%s)"
 OUTDIR=/tmp/Benchmark-"$ID"     # Use /tmp since it is usually on a non-network drive
 
-# Linux (non-kvm)
+Linux (non-kvm)
 run_linux() {
     echo "Benchmarking linux with timestep of $1 trial 1"
-    sh benchmark_linux.sh -o "$OUTDIR"/linux-results-r"$1".txt -p "$OUTDIR"/linux-output-r"$1" -i qemu_image_timescript.img -n -r "$1" -w 120 -t 60 2> /dev/null
+    sh benchmark_linux.sh -o "$OUTDIR"/linux-results-r"$1".txt -p "$OUTDIR"/linux-output-r"$1" -i qemu_image_timescript.img -n -f "$1" -w 120 -t 60 2> /dev/null
     echo "Benchmarking linux with timestep of $1 trial 2"
-    sh benchmark_linux.sh -o "$OUTDIR"/linux-results-r"$1".txt -p "$OUTDIR"/linux-output-r"$1" -i qemu_image_timescript.img -n -r "$1" -w 120 -t 60 2> /dev/null
+    sh benchmark_linux.sh -o "$OUTDIR"/linux-results-r"$1".txt -p "$OUTDIR"/linux-output-r"$1" -i qemu_image_timescript.img -n -f "$1" -w 120 -t 60 2> /dev/null
     echo "Benchmarking linux with timestep of $1 trial 3"
-    sh benchmark_linux.sh -o "$OUTDIR"/linux-results-r"$1".txt -p "$OUTDIR"/linux-output-r"$1" -i qemu_image_timescript.img -n -r "$1" -w 120 -t 60 2> /dev/null
+    sh benchmark_linux.sh -o "$OUTDIR"/linux-results-r"$1".txt -p "$OUTDIR"/linux-output-r"$1" -i qemu_image_timescript.img -n -f "$1" -w 120 -t 60 2> /dev/null
 }
 run_linux 4
 run_linux 2
 run_linux 1
 
-# Linux (kvm)
+Linux (kvm)
 run_linux_kvm() {
     echo "Benchmarking linux-kvm with timestep of $1 trial 1"
-    sh benchmark_linux.sh -o "$OUTDIR"/linux-kvm-results-r"$1".txt -p "$OUTDIR"/linux-kvm-output-r"$1" -i qemu_image_timescript.img -n -r "$1" -w 120 -t 60 -k 2> /dev/null
+    sh benchmark_linux.sh -o "$OUTDIR"/linux-kvm-results-r"$1".txt -p "$OUTDIR"/linux-kvm-output-r"$1" -i qemu_image_timescript.img -n -f "$1" -w 120 -t 60 -k 2> /dev/null
     echo "Benchmarking linux-kvm with timestep of $1 trial 2"
-    sh benchmark_linux.sh -o "$OUTDIR"/linux-kvm-results-r"$1".txt -p "$OUTDIR"/linux-kvm-output-r"$1" -i qemu_image_timescript.img -n -r "$1" -w 120 -t 60 -k 2> /dev/null
+    sh benchmark_linux.sh -o "$OUTDIR"/linux-kvm-results-r"$1".txt -p "$OUTDIR"/linux-kvm-output-r"$1" -i qemu_image_timescript.img -n -f "$1" -w 120 -t 60 -k 2> /dev/null
     echo "Benchmarking linux-kvm with timestep of $1 trial 3"
-    sh benchmark_linux.sh -o "$OUTDIR"/linux-kvm-results-r"$1".txt -p "$OUTDIR"/linux-kvm-output-r"$1" -i qemu_image_timescript.img -n -r "$1" -w 120 -t 60 -k 2> /dev/null
+    sh benchmark_linux.sh -o "$OUTDIR"/linux-kvm-results-r"$1".txt -p "$OUTDIR"/linux-kvm-output-r"$1" -i qemu_image_timescript.img -n -f "$1" -w 120 -t 60 -k 2> /dev/null
 }
 run_linux_kvm 4
 run_linux_kvm 2
@@ -51,11 +51,11 @@ run_linux_kvm 0.0625
 # Rust
 run_rust() {
     echo "Benchmarking Rust with timestep of $1 trial 1"
-    sh benchmark_rust.sh -o "$OUTDIR"/rust-results-r"$1".txt -p "$OUTDIR"/rust-output-r"$1" -r "$1" -w 120 -t 60 2> /dev/null
+    sh benchmark_rust.sh -o "$OUTDIR"/rust-results-r"$1".txt -p "$OUTDIR"/rust-output-r"$1" -f "$1" -w 120 -t 60 -i rust-kernel/test_os/larger.png 2> /dev/null
     echo "Benchmarking Rust with timestep of $1 trial 2"
-    sh benchmark_rust.sh -o "$OUTDIR"/rust-results-r"$1".txt -p "$OUTDIR"/rust-output-r"$1" -r "$1" -w 120 -t 60 2> /dev/null
+    sh benchmark_rust.sh -o "$OUTDIR"/rust-results-r"$1".txt -p "$OUTDIR"/rust-output-r"$1" -f "$1" -w 120 -t 60 -i rust-kernel/test_os/larger.png 2> /dev/null
     echo "Benchmarking Rust with timestep of $1 trial 3"
-    sh benchmark_rust.sh -o "$OUTDIR"/rust-results-r"$1".txt -p "$OUTDIR"/rust-output-r"$1" -r "$1" -w 120 -t 60 2> /dev/null
+    sh benchmark_rust.sh -o "$OUTDIR"/rust-results-r"$1".txt -p "$OUTDIR"/rust-output-r"$1" -f "$1" -w 120 -t 60 -i rust-kernel/test_os/larger.png 2> /dev/null
 }
 run_rust 4
 run_rust 2
@@ -74,11 +74,11 @@ run_rust 0.0009765625
 # Process
 run_process() {
     echo "Benchmarking process with timestep of $1 trial 1"
-    sh benchmark_process.sh -o "$OUTDIR"/process-results-r"$1".txt -p "$OUTDIR"/process-output-r"$1" -r "$1" -w 120 -t 60 2> /dev/null
+    sh benchmark_process.sh -o "$OUTDIR"/process-results-r"$1".txt -p "$OUTDIR"/process-output-r"$1" -f "$1" -w 120 -t 60 2> /dev/null
     echo "Benchmarking process with timestep of $1 trial 2"
-    sh benchmark_process.sh -o "$OUTDIR"/process-results-r"$1".txt -p "$OUTDIR"/process-output-r"$1" -r "$1" -w 120 -t 60 2> /dev/null
+    sh benchmark_process.sh -o "$OUTDIR"/process-results-r"$1".txt -p "$OUTDIR"/process-output-r"$1" -f "$1" -w 120 -t 60 2> /dev/null
     echo "Benchmarking process with timestep of $1 trial 3"
-    sh benchmark_process.sh -o "$OUTDIR"/process-results-r"$1".txt -p "$OUTDIR"/process-output-r"$1" -r "$1" -w 120 -t 60 2> /dev/null
+    sh benchmark_process.sh -o "$OUTDIR"/process-results-r"$1".txt -p "$OUTDIR"/process-output-r"$1" -f "$1" -w 120 -t 60 2> /dev/null
 }
 run_process 4
 run_process 2

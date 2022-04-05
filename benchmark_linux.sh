@@ -12,7 +12,7 @@ OPTIONS:
     -n                      do not modify the given image file (thus ignores any scripts in args)
     -o <resultfilename>     write timestamp IDs to the given file once qemu exits
     -p <outputdir>          write individual qemu outputs to the given directory
-    -r <rate>               set the timestep between calls to spawn new VMs in seconds -- default 10
+    -f <frequency>               set the timestep between calls to spawn new VMs in seconds -- default 10
     -t <duration>           set the duration of the benchmark in seconds -- default 60
     -w <duration>           set the duration of the warmup time prior to the benchmark -- default 60
 " 1>&2; exit 1; }
@@ -51,7 +51,7 @@ while getopts ":hdo:p:ki:nr:t:w:" OPT; do
             NOMOD="1"
             ;;
         r)
-            RATE="$OPTARG"
+            FREQUENCY="$OPTARG"
             ;;
         t)
             TESTTIME="$OPTARG"
@@ -88,10 +88,10 @@ else                                    # -n flag is not present, so copy the im
     sh edit_image.sh -s "$IMG" "$@"   # copy all script files to the image and add them to .profile
 fi
 
-TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$RATE*1.1))")
+TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$FREQUENCY*1.1))")
 echo "Warmup time: $WARMTIME"
 echo "Test time: $TESTTIME"
-echo "VM spawn interval: $RATE"
+echo "VM spawn interval: $FREQUENCY"
 echo "Total VMs to create (total necessary * 1.1): $TOTAL"
 
 write_begin_end() {
@@ -107,7 +107,7 @@ i=1
 while [ "$i" -le "$TOTAL" ]; do
     sh start_linux.sh -b "$BENCHFILE" $DEBUG $USEKVM -n -i "$IMG" -p "$OUTDIR" &
     printf "\rSpawned VM %s" "$i"
-    sleep "$RATE"
+    sleep "$FREQUENCY"
     i=$((i + 1))
 done
 printf "\n"

@@ -94,7 +94,7 @@ write_begin_end &
 
 i=1
 while [ "$i" -le "$TOTAL" ]; do
-    sh start_rust.sh -b "$BENCHFILE" $DEBUG -i "$IMAGE" -m "$MEMORY" -p "$OUTDIR" -r "$BIN" &
+    sh start_rust.sh -b "$BENCHFILE" $DEBUG -i "$IMAGE" -m "$MEMORY" -p "$OUTDIR" -e "$BIN" &
     printf "\rSpawned VM %s" "$i"
     sleep "$FREQUENCY"
     i=$((i + 1))
