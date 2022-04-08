@@ -13,6 +13,7 @@ OPTIONS:
     -o <outfilename>        write start and end timestamps as well as any serial output to the given output file
     -p <outdir>             write output file to the given directory
     -t <path/to/thumbnail>  write thumbnail to the given file path
+    -p <path/to/namedpipe>  named pipe to use for serial communication with qemu
 " 1>&2; exit 1; }
 
 BENCHFILE=
@@ -23,8 +24,9 @@ NODISP="-display none"
 MEMORY=
 IMAGE=
 THUMBNAIL=
+NAMEDPIPE=
 
-while getopts ":hb:de:i:m:o:p:t:" OPT; do
+while getopts ":hb:de:i:m:o:p:t:p:" OPT; do
     case "$OPT" in
         h)
             usage
@@ -53,6 +55,8 @@ while getopts ":hb:de:i:m:o:p:t:" OPT; do
         t)
             THUMBNAIL="$OPTARG"
             ;;
+        p)
+            NAMEDPIPE="$OPTARG"
         *)
             echo "ERROR: unknown option: $OPT"
             usage
@@ -65,6 +69,7 @@ shift $((OPTIND - 1))  # isolate remaining args
 [ -f "$BIN" ] || { echo "ERROR: binary does not exist: $BIN"; exit 1; }
 [ -n "$IMAGE" ] || { echo "ERROR: missing required argument: -i <path/to/image>"; usage; }
 [ -f "$IMAGE" ] || { echo "ERROR: image file does not exist: $IMAGE"; exit 1; }
+[ -f "$NAMEDPIPE" ] || { echo "ERROR: named pipe file does not exist: $NAMEDPIPE"; exit 1; }
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
 NAME="qemu-rust-$TS"
@@ -75,44 +80,21 @@ NAME="qemu-rust-$TS"
 OUTFILE="$OUTDIR/$OUTFILE"
 THUMBNAIL="$OUTDIR/$THUMBNAIL"
 
-NAMEDPIPE="/tmp/$NAME"
-mkfifo "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # create I/O pipes
-PIPE="-serial pipe:$NAMEDPIPE"
-
-
-##### DEFINE FUNCTIONS FOR I/O #####
-
-
-send_image () {
-    echo "begin" > "$NAMEDPIPE.in"
-    # send a few bytes to trigger serial interrupts
-    # if qemu is not finished booting, at least one of these will need to be
-    # consumed by the kernel, which ensures the kernel reads all the png data
-    cat "$1" > "$NAMEDPIPE.in"
-}
-
-receive_image () {
-    cat "$NAMEDPIPE.out" > "$1"
-}
-
-
 ##### SEND AND RECEIVE DATA FROM SERIAL PORT #####
-
-
-send_image "$IMAGE" &
-receive_image "$THUMBNAIL" &
-
-
 ##### BEGIN RUNNING QEMU #####
 
 /usr/bin/time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
-    -drive format=raw,file="$BIN" \
-    -snapshot \
-    -no-reboot \
-    -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
-    $PIPE \
-    $MEMORY \
-    $NODISP
+-drive format=raw,file="$BIN" \
+-snapshot \
+-no-reboot \
+-device isa-debug-exit,iobase=0xf4,iosize=0x04 \
+"-serial pipe:$NAMEDPIPE" \
+$MEMORY \
+$NODISP &
+dd bs=1 count=1 < "$NAMEDPIPE.out" > /dev/null 2> /dev/null
+cat "$IMAGE" > "$NAMEDPIPE.in"
+cat "$NAMEDPIPE.out" > "$THUMBNAIL"
+
 # 0xf4 is used to communicate exit codes to qemu
 [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"
 
