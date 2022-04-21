@@ -105,15 +105,20 @@ receive_image "$THUMBNAIL" &
 
 ##### BEGIN RUNNING QEMU #####
 
-/usr/bin/time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
+/usr/bin/time -o "$OUTFILE" --append --portability timeout 10s qemu-system-x86_64 \
     -drive format=raw,file="$BIN" \
     -snapshot \
     -no-reboot \
+    # 0xf4 is used to communicate exit codes to qemu
     -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
     $PIPE \
     $MEMORY \
     $NODISP
-# 0xf4 is used to communicate exit codes to qemu
-[ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"
+
+if [ $? -ne 124 ]; then
+    [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"
+else 
+    echo "TIMEOUT"
+fi
 
 rm "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # remove pipes
