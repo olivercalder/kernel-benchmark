@@ -93,10 +93,8 @@ write_begin_end() {
 write_begin_end &
 
 i=1
-
 while [ "$i" -le "$TOTAL" ]; do
-    mkfifo "$OUTDIR/io_pipe$i.in" "$OUTDIR/io_pipe$i.out"
-    sh start_rust.sh -b "$BENCHFILE" $DEBUG -i "$IMAGE" -m "$MEMORY" -p "$OUTDIR" -e "$BIN" -p "$OUTDIR/io_pipe$i" &
+    sh start_rust.sh -b "$BENCHFILE" $DEBUG -i "$IMAGE" -m "$MEMORY" -p "$OUTDIR" -e "$BIN" &
     printf "\rSpawned VM %s" "$i"
     sleep "$FREQUENCY"
     i=$((i + 1))

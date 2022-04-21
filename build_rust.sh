@@ -25,7 +25,6 @@ send_image () {
 }
 
 cd rust-kernel/test_os
-git checkout benchmark
 mkfifo ${DEFAULT_PIPE}.in ${DEFAULT_PIPE}.out
 cargo clean
 send_image img.png &
