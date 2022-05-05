@@ -15,10 +15,10 @@ mkdir -p "$TMPDIR"
 cd "$TMPDIR"
 
 if [ ! -d "rusty-nail" ]; then
-    git clone https://github.com/olivercalder/rusty-nail
+    git clone ssh://git@github.com/olivercalder/rusty-nail
 fi
 
-podman build -f "${CWD}/Dockerfile" -t "$PODMANIMG" .
+podman --storage-opt overlay.mount_program=/usr/bin/fuse-overlayfs --storage-opt overlay.ignore_chown_errors=true build -f "${CWD}/Dockerfile" -t "$PODMANIMG" .
 
 cd "$CWD"
 

@@ -29,7 +29,7 @@ for filename in sys.argv[1:]:
                 end_ts = int(line.split()[5])
                 time_ns = end_ts - begin_ts
                 time_minutes = time_ns / 60000000000
-                benchmarks[bench_id] = count / time_minutes
+                benchmarks[(filename, bench_id)] = count / time_minutes
                 count = 0
                 bench_id = ''
             elif bench_id:
