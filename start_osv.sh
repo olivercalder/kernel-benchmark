@@ -108,8 +108,8 @@ NAME="osv-$TS"
 [ -n "$OUTDIR" ] && mkdir -p "$OUTDIR" || OUTDIR="."
 OUTFILE="$OUTDIR/$OUTFILE"
 
-cp "$BIN" "/tmp/${NAME}.img"
-BIN="/tmp/${NAME}.img"
+cp "$BIN" "/tmp/${NAME}.raw"
+BIN="/tmp/${NAME}.raw"
 
 TAP_NAME="fc-$TAP-tap0"
 TAP_IP="$(printf '169.%s.%s.%s' $(((4 * TAP + 1) / 256 / 256)) $((((4 * TAP + 1) / 256) % 256)) $(((4 * TAP + 1) % 256)))"
@@ -119,27 +119,26 @@ CLIENT_IP="$(printf '169.%s.%s.%s' $(((4 * TAP + 1) / 256 / 256)) $((((4 * TAP +
 run_osv_with_tcp () {
     # "${CWD}/osv-build/scripts/imgedit.py" setargs "$BIN" "rusty-nail -a 10.0.2.15:12345 -x $WIDTH -y $HEIGHT $CROP"
     # 10.0.2.15 is default IP where the hostfwd option sends packets over the forwarded ports
-    echo "$(date +%s%N) OSv initiated" >> "$OUTFILE"
+    # echo "$(date +%s%N) OSv initiated" >> "$OUTFILE"
     # echo "/usr/bin/time -o "$OUTFILE" --append --portability ./osv-build/scripts/firecracker.py -i "$BIN" -e "--rootfs=zfs /rusty-nail -a $CLIENT_IP:$PORT -x $WIDTH -y $HEIGHT $CROP" -k osv-build/kernel.elf -n -t "$TAP_NAME" --tap_ip "$TAP_IP" --client_ip "$CLIENT_IP""
-    /usr/bin/time -o "$OUTFILE" --append --portability ./osv-build/scripts/firecracker.py \
+    /usr/bin/time -o "$OUTFILE" --append --portability ./firecracker.py \
     -i "$BIN" \
     -e "/rusty-nail -a $CLIENT_IP:$PORT -x $WIDTH -y $HEIGHT $CROP" \
-    -k osv-build/kernel.elf -n -t "$TAP_NAME" --tap_ip "$TAP_IP" --client_ip "$CLIENT_IP" \
-    -m "$MEMORY"
+    -k ./kernel.elf -n -t "$TAP_NAME" --tap_ip "$TAP_IP" --client_ip "$CLIENT_IP" \
+    -m "$MEMORY" > /dev/null
 
     ECODE=$?
     END_TS="$(date +%s%N)"
     if [ $ECODE -eq 0 ]; then
-        echo "$END_TS OSv exited successfully" >> "$OUTFILE"
+        # echo "$END_TS OSv exited successfully" >> "$OUTFILE"
         [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"
-        true
+        # true
     else
         echo "$END_TS OSv exited with error code $ECODE" >> "$OUTFILE"
         #[ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"
-        true
+        # true
     fi
     rm "$BIN"
-    rm "/tmp/${NAME}.raw"
 }
 
 
@@ -158,9 +157,11 @@ fi
 
 run_osv_with_tcp &
 
+# sleep 0.1 # seems to avoid panic on line 14 of main.rs in rusty-nail
 du -b "$IMAGE" | awk -F ' ' '{print $1}' | timeout 0.3s "$NETCAT" "$CLIENT_IP" "$PORT"
 while [ $? -ne 0 ]; do
-    echo "Retrying sending image size to OSv"
+    # echo "Retrying sending image size to OSv"
+    sleep 0.1
     du -b "$IMAGE" | awk -F ' ' '{print $1}' | "$NETCAT" "$CLIENT_IP" "$PORT"
 done
 "$NETCAT" "$CLIENT_IP" "$PORT" < "$IMAGE" > "$THUMBNAIL"

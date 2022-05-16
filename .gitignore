@@ -2,7 +2,7 @@ linux
 rust-kernel
 *.img
 *.swp
-benchmark-data
+benchmark-data*
 osv
 osv-build
 podman

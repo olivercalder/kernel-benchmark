@@ -67,7 +67,7 @@ shift $((OPTIND - 1))  # isolate remaining args
 [ -f "$IMAGE" ] || { echo "ERROR: image file does not exist: $IMAGE"; exit 1; }
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
-NAME="qemu-rust-$TS"
+NAME="rust-$TS"
 
 [ -n "$OUTFILE" ] || OUTFILE="$NAME.output"
 [ -n "$THUMBNAIL" ] || THUMBNAIL="$NAME.png"
@@ -84,7 +84,7 @@ PIPE="-serial pipe:$NAMEDPIPE"
 
 
 send_image () {
-    echo "begin" > "$NAMEDPIPE.in"
+    echo "beginbeginbeginbeginbeginbegin" > "$NAMEDPIPE.in"
     # send a few bytes to trigger serial interrupts
     # if qemu is not finished booting, at least one of these will need to be
     # consumed by the kernel, which ensures the kernel reads all the png data
@@ -106,8 +106,8 @@ receive_image "$THUMBNAIL" &
 ##### BEGIN RUNNING QEMU #####
 
 # 0xf4 is used to communicate exit  codes to qemu
-/usr/bin/time -o "$OUTFILE" --append --portability timeout 10s qemu-system-x86_64 \
-    -drive format=raw,file="$BIN" \
+/usr/bin/time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
+    -drive format=raw,file="$BIN" -smp 1 \
     -snapshot \
     -no-reboot \
     -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
@@ -115,10 +115,10 @@ receive_image "$THUMBNAIL" &
     $MEMORY \
     $NODISP
 
-if [ $? -ne 124 ]; then
+if [ $? -eq 33 ]; then
     [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"
 else 
-    echo "TIMEOUT"
+    echo "rust instance failed"
 fi
 
 rm "$NAMEDPIPE.in" "$NAMEDPIPE.out"     # remove pipes
