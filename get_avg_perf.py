@@ -64,7 +64,7 @@ for filename in sys.argv[1:]:
 
 # x is dict item, x[0] is (filename, bench_id), os.path.split(x[0][0])[1] is tail of filename
 def extract_trial_name(x): return os.path.split(x[0][0])[1]
-groups = {b: tuple(zip(*[v for _, v in vals])) for b, vals in groupby(sorted(benchmarks.items(), key=extract_trial_name), key=extract_trial_name)}
+groups = {b: tuple(zip(*[v for _, v in vals if v])) for b, vals in groupby(sorted(benchmarks.items(), key=extract_trial_name), key=extract_trial_name)}
 average_perfs = {k: (mean(ts), mean(ls)) for k, (ts, ls) in groups.items()}
 
 print('Found {} benchmarks'.format(len(benchmarks)))
