@@ -6,6 +6,8 @@ command -v qemu-system-x86_64 > /dev/null || { echo "ERROR: please install qemu-
 
 CWD=$(pwd)
 
+DEFAULT_PIPE="io_pipe"
+
 # If the rust-kernel directory does not yet exist, clone it, and set up the Rust compiler
 if [ ! -d rust-kernel ]; then
     git clone https://github.com/olivercalder/rust-kernel
@@ -17,18 +19,15 @@ if [ ! -d rust-kernel ]; then
     cd ../..
 fi
 
-waittokillqemu () {
-    while true; do
-        kill $(ps -aux | grep "qemu-system-x86_64" | grep "bootimage-test_os.bin" | awk '{print $2}') 2> /dev/null && break
-        sleep 1
-    done
+send_image () {
+    echo > "$DEFAULT_PIPE.in"
+    cat "$1" > "${DEFAULT_PIPE}.in"
 }
 
 cd rust-kernel/test_os
+mkfifo ${DEFAULT_PIPE}.in ${DEFAULT_PIPE}.out
 cargo clean
-waittokillqemu &            # run waittokillqemu in the background
-time cargo run --release    # compile the rust kernel using cargo run in order to build bootimage (and time it for fun)
-
-kill "$(ps -aux | grep waittokillqemu | awk '{print $2}')" 2> /dev/null    # kill the sleeping task if the compile failed
+send_image img.png &
+cargo run --release # compile the rust kernel using cargo run in order to build bootimage
 
 cd "$CWD"

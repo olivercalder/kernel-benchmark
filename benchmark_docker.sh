@@ -4,33 +4,42 @@ usage() { echo "USAGE: sh $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
-    -i <'docker commands'>  execute the given docker commands, rather than 'docker run hello-world'
-    -m                      mute output from start_docker.sh stdout (pipe 1> /dev/null)
+    -e <dockerimage>        execute the given docker image (should be build from ./Dockerfile)
+    -f <frequency>          set the timestep between calls to spawn new containers in seconds -- default 10
+    -i <path/to/image>      original image file path
     -o <resultfilename>     write timestamp IDs to the given file once docker exits
     -p <outputdir>          pass '-p outdir' on to start_docker.sh
-    -r <rate>               set the timestep between calls to spawn new containers in seconds -- default 10
     -t <duration>           set the duration of the benchmark in seconds -- default 60
     -w <duration>           set the duration of the warmup time prior to the benchmark -- default 60
+    -x <width>              width of thumbnail -- defaults to 150
+    -y <height>             height of thumbnail -- defaults to match width
+    -c                      crop the image to exactly fill the given thumbnail dimensions
 " 1>&2; exit 1; }
 
-DOCKERCMD="docker run hello-world"
-MUTE="/dev/stdout"
+DOCKERIMG=
 BENCHFILE=
 OUTDIR=
-RATE="10"
+FREQUENCY="10"
 TESTTIME="60"
 WARMTIME="60"
+IMAGE=
+WIDTH=150
+HEIGHT=
+CROP=
 
-while getopts ":hi:mo:p:r:t:w:" OPT; do
+while getopts ":he:f:i:o:p:t:w:x:y:c" OPT; do
     case "$OPT" in
         h)
             usage
             ;;
-        i)
-            DOCKERCMD="$OPTARG"
+        e)
+            DOCKERIMG="$OPTARG"
             ;;
-        m)
-            MUTE="/dev/null"
+        f)
+            FREQUENCY="$OPTARG"
+            ;;
+        i)
+            IMAGE="$OPTARG"
             ;;
         o)
             BENCHFILE="$OPTARG"
@@ -38,16 +47,23 @@ while getopts ":hi:mo:p:r:t:w:" OPT; do
         p)
             OUTDIR="$OPTARG"
             ;;
-        r)
-            RATE="$OPTARG"
-            ;;
         t)
             TESTTIME="$OPTARG"
             ;;
         w)
             WARMTIME="$OPTARG"
             ;;
+        x)
+            WIDTH="$OPTARG"
+            ;;
+        y)
+            HEIGHT="$OPTARG"
+            ;;
+        c)
+            CROP="-c"
+            ;;
         *)
+            echo "ERROR: unknown option: $OPT"
             usage
             ;;
     esac
@@ -55,21 +71,26 @@ done
 
 shift $((OPTIND - 1))  # isolate remaining args (which should be script filenames)
 
-# Gets name so it can be cleaned up later
-# This doesn't work if something other than the primary command is the third item in the command
-NAME="$(echo "$DOCKERCMD" | awk '{$1=$2=""; print $3}')"
+[ -n "$IMAGE" ] || { echo "ERROR: missing required argument: -i <path/to/image>"; usage; }
+[ -f "$IMAGE" ] || { echo "ERROR: image file does not exist: $IMAGE"; exit 1; }
 
-$DOCKERCMD > /dev/null
+[ -n "$HEIGHT" ] || HEIGHT="$WIDTH"
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
+NAME="benchmark-docker-$TS"
 
-[ -n "$BENCHFILE" ] || BENCHFILE="benchmark-docker-$TS-results.txt"
-[ -n "$OUTDIR" ] || OUTDIR="benchmark-docker-$TS-output"
+if [ ! -n "$DOCKERIMG" ]; then
+    DOCKERIMG="$NAME"
+    sh build_docker.sh "$DOCKERIMG"
+fi
 
-TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$RATE*1.1))")
+[ -n "$BENCHFILE" ] || BENCHFILE="$NAME-results.txt"
+[ -n "$OUTDIR" ] || OUTDIR="$NAME-output"
+
+TOTAL=$(python3 -c "print(int(($WARMTIME+$TESTTIME)/$FREQUENCY*1.1))")
 echo "Warmup time: $WARMTIME"
 echo "Test time: $TESTTIME"
-echo "Container spawn interval: $RATE"
+echo "Container spawn interval: $FREQUENCY"
 echo "Total containers to create (total necessary * 1.1): $TOTAL"
 
 write_begin_end() {
@@ -84,15 +105,15 @@ write_begin_end &
 i=1
 #for ((i=1;i<=TOTAL;i++)); do
 while [ "$i" -le "$TOTAL" ]; do
-    sh start_docker.sh -b "$BENCHFILE" -i "$DOCKERCMD" -p "$OUTDIR" > $MUTE &
+    sh start_docker.sh -b "$BENCHFILE" -e "$DOCKERIMG" -i "$IMAGE" -p "$OUTDIR" -x "$WIDTH" -y "$HEIGHT" $CROP &
     printf "\rSpawned container %s" "$i"
-    sleep "$RATE"
+    sleep "$FREQUENCY"
     i=$((i + 1))
 done
 printf "\n"
 
 # Wait until all containers exit or fail
-while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_docker.sh" | grep "$DOCKERCMD")" ]; do sleep 0.1; done
+while [ -n "$(ps -aux | grep -v "grep" | grep -v "benchmark_docker.sh" | grep "$DOCKERIMG")" ]; do sleep 0.1; done
 
 # Remove all docker containers that stopped from this benchmark so that they are cleaned up for future benchmarks
-docker rm "$(docker ps -a | grep "$NAME" | awk '{print $1}')"   # need single quotes for print $1, so use grep
+docker system prune -f

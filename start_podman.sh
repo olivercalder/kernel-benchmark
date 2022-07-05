@@ -4,20 +4,20 @@ usage() { echo "USAGE: sh $0 [OPTIONS]
 
 OPTIONS:
     -h                      display help
-    -b <resultfile>         benchmark mode: write timestamp ID to the given file once docker exits
-    -e <dockerimage>        execute the given docker image (should be built from ./Dockerfile)
+    -b <resultfile>         benchmark mode: write timestamp ID to the given file once podman exits
+    -e <podmanimage>        execute the given podman image (should be built from ./Dockerfile)
     -i <path/to/image>      original image file path
     -o <outfilename>        write start and end timestamps to the given output file
     -p <outdir>             write output file and work dir to the given directory
     -t <thumbnail>          write thumbnail with the given filename
-    -w <path/to/work/dir>   mount this directory to the docker container -- thumbnail will be written here
+    -w <path/to/work/dir>   mount this directory to the podman container -- thumbnail will be written here
     -x <width>              width of thumbnail -- defaults to 150
     -y <height>             height of thumbnail -- defailts to match width
     -c                      crop the image to exactly fill the given thumbnail dimensions
 " 1>&2; exit 1; }
 
 BENCHFILE=
-DOCKERIMG="rusty-nail-docker"
+PODMANIMG="rusty-nail-podman"
 OUTFILE=
 OUTDIR=
 IMAGE=
@@ -36,7 +36,7 @@ while getopts ":hb:e:i:o:p:t:w:x:y:c" OPT; do
             BENCHFILE="$OPTARG"
             ;;
         e)
-            DOCKERIMG="$OPTARG"
+            PODMANIMG="$OPTARG"
             ;;
         i)
             IMAGE="$OPTARG"
@@ -77,7 +77,7 @@ shift $((OPTIND - 1))  # isolate remaining args (which should be script filename
 [ -n "$HEIGHT" ] || HEIGHT="$WIDTH"
 
 TS="$(date +%s%N)"  # get current time in nanoseconds -- good enough for unique timestamp
-NAME="docker-$TS"
+NAME="podman-$TS"
 
 [ -n "$OUTFILE" ] || OUTFILE="$NAME.output"
 [ -n "$THUMBNAIL" ] || THUMBNAIL="thumbnail.png"
@@ -87,28 +87,31 @@ OUTFILE="$OUTDIR/$OUTFILE"
 WORKDIR="$OUTDIR/$WORKDIR"
 mkdir -p "$WORKDIR"
 ORIG="${NAME}_original.png"
-ln "$IMAGE" "${WORKDIR}/${ORIG}"    # can't use soft links, but don't want to copy the whole image
+cp "$IMAGE" "${WORKDIR}/${ORIG}"    # can't use soft links, but don't want to copy the whole image
 
 CWD="$(pwd)"
 WORKDIR="$(cd "$(dirname "$WORKDIR")" && pwd)/$(basename "$WORKDIR")"   # get absolute path
-cd "$CWD"
+cd "$WORKDIR"
 
 
-##### BEGIN RUNNING DOCKER #####
+##### BEGIN RUNNING PODMAN #####
 
 
-echo "$(date +%s%N) Docker initiated" >> "$OUTFILE"
-/usr/bin/time -o "$OUTFILE" --append --portability docker run --rm --user "$(id -u)":"$(id -g)" \
-    -v "$WORKDIR":/images -w /images \
-    "$DOCKERIMG" "rusty-nail" -i "$ORIG" -t "$THUMBNAIL" -x "$WIDTH" -y "$HEIGHT" $CROP >> "$OUTFILE"
+echo "$(date +%s%N) Podman initiated" >> "$OUTFILE"
+# Don't run podman as user, since permission problems arise as volumes are
+# mounted as root in the container, and workarounds are messy and slow
+# This works on Debian-based systems. On RHEL-based systems, workarounds are necessary.
+/usr/bin/time -o "$OUTFILE" --append --portability dbus-run-session -- /usr/bin/podman run  --rm \
+    -v "$WORKDIR":/images:Z -w /images \
+    "$PODMANIMG" "rusty-nail" -i "$ORIG" -t "$THUMBNAIL" -x "$WIDTH" -y "$HEIGHT" $CROP >> "$OUTFILE"
 ECODE=$?
 END_TS="$(date +%s%N)"
 if [ $ECODE -eq 0 ]; then
-    echo "$END_TS Docker exited successfully" >> "$OUTFILE"
+    echo "$END_TS Podman exited successfully" >> "$OUTFILE"
     [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"
     true
 else
-    echo "$END_TS Docker exited with error code $ECODE" >> "$OUTFILE"
-    #[ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"   # docker actually fails under load, so don't write failures as successes
+    echo "$END_TS Podman exited with error code $ECODE" >> "$OUTFILE"
+    #[ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE"   # don't write failures as successes
     true
 fi
