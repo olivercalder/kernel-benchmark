@@ -27,7 +27,7 @@ FREQUENCY="10"
 TESTTIME="60"
 WARMTIME="60"
 IMAGE=
-MEMORY="2G"
+MEMORY="128M"
 WIDTH=150
 HEIGHT=
 CROP=
@@ -118,7 +118,7 @@ write_begin_end &
 PORT_OFFSET=12345
 i=1
 while [ "$i" -le "$TOTAL" ]; do
-    sh start_osv.sh -a "$((i + PORT_OFFSET))" -b "$BENCHFILE" $DEBUG -e "$OSVIMG" -i "$IMAGE" -m "$MEMORY" -p "$OUTDIR" -x "$WIDTH" -y "$HEIGHT" $CROP &
+    sh start_osv.sh -n "$i" -b "$BENCHFILE" $DEBUG -e "$OSVIMG" -i "$IMAGE" -m "$MEMORY" -p "$OUTDIR" -x "$WIDTH" -y "$HEIGHT" $CROP &
     printf "\rSpawned VM %s" "$i"
     sleep "$FREQUENCY"
     i=$((i + 1))

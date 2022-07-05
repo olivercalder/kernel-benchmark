@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""
+This file is obsolete and no longer compatible with benchmark output.
+Use get_avg_perf.py to compute average latency
+"""
+
 import os
 import sys
 import getopt

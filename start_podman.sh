@@ -87,11 +87,11 @@ OUTFILE="$OUTDIR/$OUTFILE"
 WORKDIR="$OUTDIR/$WORKDIR"
 mkdir -p "$WORKDIR"
 ORIG="${NAME}_original.png"
-ln "$IMAGE" "${WORKDIR}/${ORIG}"    # can't use soft links, but don't want to copy the whole image
+cp "$IMAGE" "${WORKDIR}/${ORIG}"    # can't use soft links, but don't want to copy the whole image
 
 CWD="$(pwd)"
 WORKDIR="$(cd "$(dirname "$WORKDIR")" && pwd)/$(basename "$WORKDIR")"   # get absolute path
-cd "$CWD"
+cd "$WORKDIR"
 
 
 ##### BEGIN RUNNING PODMAN #####
@@ -101,8 +101,8 @@ echo "$(date +%s%N) Podman initiated" >> "$OUTFILE"
 # Don't run podman as user, since permission problems arise as volumes are
 # mounted as root in the container, and workarounds are messy and slow
 # This works on Debian-based systems. On RHEL-based systems, workarounds are necessary.
-/usr/bin/time -o "$OUTFILE" --append --portability podman run --rm \
-    -v "$WORKDIR":/images -w /images \
+/usr/bin/time -o "$OUTFILE" --append --portability dbus-run-session -- /usr/bin/podman run  --rm \
+    -v "$WORKDIR":/images:Z -w /images \
     "$PODMANIMG" "rusty-nail" -i "$ORIG" -t "$THUMBNAIL" -x "$WIDTH" -y "$HEIGHT" $CROP >> "$OUTFILE"
 ECODE=$?
 END_TS="$(date +%s%N)"

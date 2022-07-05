@@ -11,7 +11,7 @@ OPTIONS:
     -n                      do not modify or copy the disk image
                             - saves a lot of startup time if there is a preconfigured image
                             - however, ignores any scripts which are passed in as arguments
-    -i <imagefile.img>      use specified qemu disk image
+    -e <imagefile.img>      use specified qemu disk image
     -o <outfilename>        write start and end timestamps, and output of all scripts, to the given file
     -p <outdir>             write the output file in the given directory
 " 1>&2; exit 1; }
@@ -47,7 +47,7 @@ while getopts ":hdklnb:i:o:p:" OPT; do
         n)
             NOMOD="1"
             ;;
-        i)
+        e)
             IMGTEMP="$OPTARG"
             ;;
         o)
@@ -97,10 +97,6 @@ else
     PIPE="-serial pipe:$NAMEDPIPE"
 fi
 
-
-##### DEFINE FUNCTIONS FOR I/O #####
-
-
 # print the given command to the input buffer, terminated by a newline character
 do_now() {
     CMD=$1
@@ -140,7 +136,8 @@ write_until() {
             esac
         done
         [ -n "$BREAK" ] && break    # break if the BREAK variable has been set
-        echo "$outline " | sed 's/.*//g' >> "$OUTFILE"
+        echo "$outline " | sed 's/
+.*//g' >> "$OUTFILE"
     done < "$NAMEDPIPE.out"
 }
 
@@ -148,7 +145,7 @@ write_until() {
 ##### BEGIN RUNNING QEMU IN THE BACKGROUND #####
 
 
-echo "$(date +%s%N) QEMU initiated" >> "$OUTFILE" && qemu-system-x86_64 \
+/usr/bin/time -o "$OUTFILE" --append --portability qemu-system-x86_64 \
     -kernel linux/arch/x86_64/boot/bzImage \
     -hda "$IMG" \
     -snapshot \
@@ -156,9 +153,10 @@ echo "$(date +%s%N) QEMU initiated" >> "$OUTFILE" && qemu-system-x86_64 \
     -no-reboot \
     $USEKVM \
     -device isa-debug-exit \
-    $PIPE \
+    -netdev user,id=mynet,hostfwd=tcp::$PORT-:12345 \
+    -device virtio-net-pci,netdev=mynet \
     $NODISP \
-    && { echo "$(date +%s%N) QEMU exited successfully" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; true; } \
+    && { [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; true; } \
     || { ECODE=$?; echo "$(date +%s%N) QEMU exited with error code $ECODE" >> "$OUTFILE" ; [ -n "$BENCHFILE" ] && echo "$TS" >> "$BENCHFILE" ; true; } \
     &
 # write timestamp and start qemu with the named pipe for I/O, and background it,
